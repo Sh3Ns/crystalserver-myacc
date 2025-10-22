@@ -143,12 +143,12 @@ foreach ($quests as &$storage) {
 /* GET MY BID */
 $getAuctionBid = null;
 if ($logged) {
-$getAuctionBid = $db->query("SELECT `account_id`, `auction_id`, `bid`, `date` FROM `myaac_charbazaar_bid` WHERE `auction_id` = {$getAuction['id']} AND `account_id` = {$account_logged->getId()} ORDER BY `bid` DESC");
-$getAuctionBid = $getAuctionBid->fetch();
+    $getAuctionBid = $db->query("SELECT `account_id`, `auction_id`, `bid`, `date` FROM `myaac_charbazaar_bid` WHERE `auction_id` = {$getAuction['id']} AND `account_id` = {$account_logged->getId()} ORDER BY `bid` DESC");
+    $getAuctionBid = $getAuctionBid->fetch();
 }
 
 $My_Bid = '<img src="' . $template_path . '/images/premiumfeatures/icon_no.png">';
-if ($logged && isset($getAuctionBid['account_id']) ) {
+if ($logged && isset($getAuctionBid['account_id'])) {
     $val = number_format($getAuctionBid['bid'], 0, ',', ',');
     $My_Bid = "<b>{$val}</b> <img src='{$template_path}/images/account/icon-tibiacointrusted.png' class='VSCCoinImages' title='Transferable Tibia Coins'>";
 }
@@ -158,251 +158,349 @@ if ($logged && isset($getAuctionBid['account_id']) ) {
 $Hoje = date('Y-m-d H:i:s');
 $End = date('Y-m-d H:i:s', strtotime($getAuction['date_end']));
 /* VERIFY DATE END */
+
+/**
+ * Calculate tries required for a skill level using Tibia formula
+ */
+function getTriesForSkillLevel($level) {
+    return ((50 * $level * $level * $level) - (150 * $level * $level) + (400 * $level)) / 3;
+}
+
+/**
+ * Calculate skill percentage progress
+ */
+function getSkillPercentage($currentTries, $skillLevel) {
+    // Tries needed to go from current level to next level
+    $currentLevelBase = getTriesForSkillLevel($skillLevel);
+    $nextLevelBase = getTriesForSkillLevel($skillLevel + 1);
+    $triesNeeded = $nextLevelBase - $currentLevelBase;
+
+    // Current tries is the progress within the current level
+    if ($triesNeeded > 0) {
+        $percentage = ($currentTries / $triesNeeded) * 100;
+        return min(100, max(0, round($percentage, 2)));
+    }
+    return 0;
+}
+
+// Calculate all skill percentages
+$skillPercentages = [
+    'axe' => getSkillPercentage($character['skill_axe_tries'], $character['skill_axe']),
+    'club' => getSkillPercentage($character['skill_club_tries'], $character['skill_club']),
+    'dist' => getSkillPercentage($character['skill_dist_tries'], $character['skill_dist']),
+    'fishing' => getSkillPercentage($character['skill_fishing_tries'], $character['skill_fishing']),
+    'fist' => getSkillPercentage($character['skill_fist_tries'], $character['skill_fist']),
+    'shielding' => getSkillPercentage($character['skill_shielding_tries'], $character['skill_shielding']),
+    'sword' => getSkillPercentage($character['skill_sword_tries'], $character['skill_sword'])
+];
 ?>
+
+<style>
+table td.PercentageColumn {
+  position: relative !important;
+  height: 20px !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  vertical-align: middle !important;
+}
+
+table td.PercentageColumn .PercentageBar {
+  position: absolute !important;
+  height: 18px !important;
+  background-color: #5f4d41 !important;
+  top: 1px !important;
+  left: 1px !important;
+  z-index: 1 !important;
+}
+
+table td.PercentageColumn .PercentageBarSpacer {
+  display: none !important;
+}
+
+table td.PercentageColumn .PercentageStringContainer {
+  display: none !important;
+}
+
+table td.PercentageColumn span.PercentageString {
+  position: absolute !important;
+  top: 3px !important;
+  width: 100% !important;
+  left: 0 !important;
+  margin: 0 !important;
+  text-align: center !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000 !important;
+  z-index: 10 !important;
+  pointer-events: none !important;
+}
+</style>
 
 <div class="TableContainer">
     <div class="CaptionContainer">
         <div class="CaptionInnerContainer">
             <span class="CaptionEdgeLeftTop"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightTop"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionBorderTop"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionVerticalLeft"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
             <div class="Text">Auction Details</div>
             <span class="CaptionVerticalRight"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
             <span class="CaptionBorderBottom"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionEdgeLeftBottom"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightBottom"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
         </div>
     </div>
     <table class="Table5" cellspacing="0" cellpadding="0">
         <tbody>
-        <tr>
-            <td>
-                <div class="InnerTableContainer">
-                    <table style="width:100%;">
-                        <tbody>
-                        <tr>
-                            <td>
-                                <div class="TableContentContainer">
-                                    <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
-                                        <tbody>
-                                        <tr>
-                                            <td>
-                                                <div class="Auction">
-                                                    <div class="AuctionHeader">
-                                                        <div class="AuctionLinks"></div>
-                                                        <div
-                                                            class="AuctionCharacterName"><?= $character['name'] ?></div>
-                                                        Level: <?= $character['level'] ?> |
-                                                        Vocation: <?= $character_voc ?> | <?= $character_sex ?> |
-                                                        World: <?= $config['lua']['serverName'] ?>
-                                                        <br>
-                                                    </div>
-                                                    <div class="AuctionBody">
-                                                        <div class="AuctionBodyBlock AuctionDisplay AuctionOutfit"
-                                                             style="font-size: 10px; text-align: center;">
-                                                            Current outfit:
-                                                            <img class="AuctionOutfitImage" src="<?= $outfit_url ?>">
-                                                        </div>
-                                                        <div
-                                                            class="AuctionBodyBlock AuctionDisplay AuctionItemsViewBox">
-                                                            <?php foreach ([2, 1, 3, 6, 4, 5, 9, 7, 10] as $i) { ?>
-                                                                <div class="CVIcon CVIconObject">
-                                                                    <?= $equipment[$i]; ?></div>
-                                                            <?php } ?>
-                                                            <div class="CVIcon CVIconObject NoEquipment" title="soul">
-                                                                <p>Soul<br><?= $character['soul'] ?></p></div>
-                                                            <div class="CVIcon CVIconObject"
-                                                                 title="boots"><?= $equipment[8]; ?></div>
-                                                            <div class="CVIcon CVIconObject NoEquipment" title="cap">
-                                                                <p>Cap<br><?= $character['cap'] ?></p></div>
-                                                        </div>
-                                                        <div class="AuctionBodyBlock ShortAuctionData">
-                                                            <?php $dateFormat = $subtopic == 'currentcharactertrades' ? 'M d Y, H:i:s' : 'd M Y' ?>
-                                                            <div class="ShortAuctionDataLabel">Auction Start:</div>
-                                                            <div
-                                                                class="ShortAuctionDataValue"><?= date($dateFormat, strtotime($getAuction['date_start'])) ?></div>
-                                                            <div class="ShortAuctionDataLabel">Auction End:</div>
-                                                            <?php
-                                                            if ($subtopic == 'currentcharactertrades') {
-                                                                $dateTimer = date('Y-m-d', strtotime($getAuction['date_end']));
-                                                                if ($showCounter ?? (date('Y-m-d', strtotime($dateTimer . ' - 1 days')) == date('Y-m-d'))) { ?>
-                                                                    <script>
-                                                                        const countDownDate = new Date("<?= date($dateFormat, strtotime($getAuction['date_end'])) ?>").getTime();
-                                                                        const x = setInterval(function () {
-                                                                            const now = new Date().getTime();
-                                                                            const distance = countDownDate - now;
-
-                                                                            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-                                                                            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                                                                            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                                                                            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-                                                                            document.getElementById("timeAuction").innerHTML = "in " + days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
-                                                                            document.getElementById("timeAuction").style.color = 'red';
-
-                                                                            if (distance < 0) {
-                                                                                clearInterval(x);
-                                                                                document.getElementById("timeAuction").innerHTML = "Finished";
-                                                                            }
-                                                                        }, 1000);
-                                                                    </script>
-                                                            <?php } ?>
-                                                                <div id="timeAuction" class="ShortAuctionDataValue">
-                                                                    <?= date($dateFormat, strtotime($getAuction['date_end'])) ?>
+            <tr>
+                <td>
+                    <div class="InnerTableContainer">
+                        <table style="width:100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="TableContentContainer">
+                                            <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
+                                                <tbody>
+                                                    <tr>
+                                                        <td>
+                                                            <div class="Auction">
+                                                                <div class="AuctionHeader">
+                                                                    <div class="AuctionLinks"></div>
+                                                                    <div class="AuctionCharacterName">
+                                                                        <?= $character['name'] ?></div>
+                                                                    Level: <?= $character['level'] ?> |
+                                                                    Vocation: <?= $character_voc ?> |
+                                                                    <?= $character_sex ?> |
+                                                                    World: <?= $config['lua']['serverName'] ?>
+                                                                    <br>
                                                                 </div>
-                                                                <div class="ShortAuctionDataBidRow">
-                                                                    <div class="ShortAuctionDataLabel">Current Bid:
+                                                                <div class="AuctionBody">
+                                                                    <div class="AuctionBodyBlock AuctionDisplay AuctionOutfit"
+                                                                        style="font-size: 10px; text-align: center;">
+                                                                        Current outfit:
+                                                                        <img class="AuctionOutfitImage"
+                                                                            src="<?= $outfit_url ?>">
                                                                     </div>
-                                                                    <div class="ShortAuctionDataValue">
-                                                                        <b><?= number_format($getAuction['price'], 0, ',', ',') ?></b>
-                                                                        <img
-                                                                            src="<?= $template_path; ?>/images/account/icon-tibiacointrusted.png"
-                                                                            class="VSCCoinImages"
-                                                                            title="Transferable Tibia Coins">
-                                                                    </div>
-                                                                </div>
-                                                                    <div class="ShortAuctionDataBidRow">
-                                                                </div>
-                                                            <?php } else { ?>
-                                                                <div class="ShortAuctionDataValue">
-                                                                    <?= date($dateFormat, strtotime($getAuction['date_end'])) ?></div>
-                                                                <div class="ShortAuctionDataBidRow">
-                                                                    <div class="ShortAuctionDataLabel">Winning Bid:
-                                                                    </div>
-                                                                    <div class="ShortAuctionDataValue">
-                                                                        <b><?= number_format($getAuction['bid_price'], 0, ',', ',') ?></b>
-                                                                        <img
-                                                                            src="<?= $template_path; ?>/images/account/icon-tibiacointrusted.png"
-                                                                            class="VSCCoinImages"
-                                                                            title="Transferable Tibia Coins"></div>
-                                                                </div>
-                                                            <?php } ?>
-                                                            <?php if ($logged && isset($getAuctionBid['account_id'])) { ?>
-                                                                <div class="ShortAuctionDataBidRow"
-                                                                     style="background-color: #d4c0a1; padding: 5px; border: 1px solid #f0e8da; box-shadow: 2px 2px 5px 0 rgb(0 0 0 / 50%);">
-                                                                    <div class="ShortAuctionDataLabel">My Bid:</div>
                                                                     <div
-                                                                        class="ShortAuctionDataValue"><?= $My_Bid ?></div>
-                                                                </div>
-                                                            <?php } ?>
-                                                        </div>
-                                                        <?php if ($logged && $getAuction['status'] == 0) { ?>
-                                                            <?php if (strtotime($End) > strtotime($Hoje) && $account_logged->getId() != $getAuction['account_old']) { ?>
-                                                                <div class="AuctionBodyBlock CurrentBid">
-                                                                    <div class="Container">
-                                                                        <div class="MyMaxBidLabel">My Bid
-                                                                        <span style="position: relative; top: 3px; margin-left: 5px;">
-                                                                            <span class="HelperDivIndicator" onmouseover="ActivateHelperDiv($(this), '', '&lt;p&gt;Place your bid and wait for the auction to end. If your bid remains the highest when the auction ends, this character will be yours!&lt;/p&gt;', '');" 
-                                                                            onmouseout="$('#HelperDivContainer').hide();">
-                                                                            <img style="border:0px;" src="<?= $template_path; ?>/images/global/content/info.gif">
-                                                                            </span>
-                                                                        </span>
+                                                                        class="AuctionBodyBlock AuctionDisplay AuctionItemsViewBox">
+                                                                        <?php foreach ([2, 1, 3, 6, 4, 5, 9, 7, 10] as $i) { ?>
+                                                                            <div class="CVIcon CVIconObject">
+                                                                                <?= $equipment[$i]; ?>
+                                                                            </div>
+                                                                        <?php } ?>
+                                                                        <div class="CVIcon CVIconObject NoEquipment"
+                                                                            title="soul">
+                                                                            <p>Soul<br><?= $character['soul'] ?></p>
                                                                         </div>
-                                                                        <form
-                                                                            action="?subtopic=currentcharactertrades&action=bid"
-                                                                            method="POST">
-                                                                            <input type="hidden" name="auction_iden"
-                                                                                   value="<?= $getAuction['id'] ?>">
-                                                                            <input class="MyMaxBidInput" type="text"
-                                                                                   name="maxbid">
-                                                                            <div class="BigButton"
-                                                                                 style="background-image:url(<?= $template_path; ?>/images/global/buttons/sbutton_green.gif)">
-                                                                                <div
-                                                                                    onmouseover="MouseOverBigButton(this);"
-                                                                                    onmouseout="MouseOutBigButton(this);">
-                                                                                    <div class="BigButtonOver"
-                                                                                         style="background-image: url(<?= $template_path; ?>/images/global/buttons/sbutton_green_over.gif); visibility: hidden;"></div>
-                                                                                    <input name="auction_confirm"
-                                                                                           class="BigButtonText"
-                                                                                           type="submit"
-                                                                                           value="Bid On Auction">
+                                                                        <div class="CVIcon CVIconObject" title="boots">
+                                                                            <?= $equipment[8]; ?></div>
+                                                                        <div class="CVIcon CVIconObject NoEquipment"
+                                                                            title="cap">
+                                                                            <p>Cap<br><?= $character['cap'] ?></p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="AuctionBodyBlock ShortAuctionData">
+                                                                        <?php $dateFormat = $subtopic == 'currentcharactertrades' ? 'M d Y, H:i:s' : 'd M Y' ?>
+                                                                        <div class="ShortAuctionDataLabel">Auction
+                                                                            Start:</div>
+                                                                        <div class="ShortAuctionDataValue">
+                                                                            <?= date($dateFormat, strtotime($getAuction['date_start'])) ?>
+                                                                        </div>
+                                                                        <div class="ShortAuctionDataLabel">Auction End:
+                                                                        </div>
+                                                                        <?php
+                                                                        if ($subtopic == 'currentcharactertrades') {
+                                                                            $dateTimer = date('Y-m-d', strtotime($getAuction['date_end']));
+                                                                            if ($showCounter ?? (date('Y-m-d', strtotime($dateTimer . ' - 1 days')) == date('Y-m-d'))) { ?>
+                                                                                <script>
+                                                                                    const countDownDate = new Date("<?= date($dateFormat, strtotime($getAuction['date_end'])) ?>").getTime();
+                                                                                    const x = setInterval(function () {
+                                                                                        const now = new Date().getTime();
+                                                                                        const distance = countDownDate - now;
+
+                                                                                        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                                                                                        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                                                                                        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                                                                                        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                                                                                        document.getElementById("timeAuction").innerHTML = "in " + days + "d " + hours + "h " + minutes + "m " + seconds + "s ";
+                                                                                        document.getElementById("timeAuction").style.color = 'red';
+
+                                                                                        if (distance < 0) {
+                                                                                            clearInterval(x);
+                                                                                            document.getElementById("timeAuction").innerHTML = "Finished";
+                                                                                        }
+                                                                                    }, 1000);
+                                                                                </script>
+                                                                            <?php } ?>
+                                                                            <div id="timeAuction"
+                                                                                class="ShortAuctionDataValue">
+                                                                                <?= date($dateFormat, strtotime($getAuction['date_end'])) ?>
+                                                                            </div>
+                                                                            <div class="ShortAuctionDataBidRow">
+                                                                                <div class="ShortAuctionDataLabel">Current
+                                                                                    Bid:
+                                                                                </div>
+                                                                                <div class="ShortAuctionDataValue">
+                                                                                    <b><?= number_format($getAuction['price'], 0, ',', ',') ?></b>
+                                                                                    <img src="<?= $template_path; ?>/images/account/icon-tibiacointrusted.png"
+                                                                                        class="VSCCoinImages"
+                                                                                        title="Transferable Tibia Coins">
                                                                                 </div>
                                                                             </div>
-                                                                        </form>
+                                                                            <div class="ShortAuctionDataBidRow">
+                                                                            </div>
+                                                                        <?php } else { ?>
+                                                                            <div class="ShortAuctionDataValue">
+                                                                                <?= date($dateFormat, strtotime($getAuction['date_end'])) ?>
+                                                                            </div>
+                                                                            <div class="ShortAuctionDataBidRow">
+                                                                                <div class="ShortAuctionDataLabel">Winning
+                                                                                    Bid:
+                                                                                </div>
+                                                                                <div class="ShortAuctionDataValue">
+                                                                                    <b><?= number_format($getAuction['bid_price'], 0, ',', ',') ?></b>
+                                                                                    <img src="<?= $template_path; ?>/images/account/icon-tibiacointrusted.png"
+                                                                                        class="VSCCoinImages"
+                                                                                        title="Transferable Tibia Coins">
+                                                                                </div>
+                                                                            </div>
+                                                                        <?php } ?>
+                                                                        <?php if ($logged && isset($getAuctionBid['account_id'])) { ?>
+                                                                            <div class="ShortAuctionDataBidRow"
+                                                                                style="background-color: #d4c0a1; padding: 5px; border: 1px solid #f0e8da; box-shadow: 2px 2px 5px 0 rgb(0 0 0 / 50%);">
+                                                                                <div class="ShortAuctionDataLabel">My Bid:
+                                                                                </div>
+                                                                                <div class="ShortAuctionDataValue">
+                                                                                    <?= $My_Bid ?></div>
+                                                                            </div>
+                                                                        <?php } ?>
                                                                     </div>
-                                                                </div>
-                                                            <?php } ?>
-                                                            <?php if (strtotime($End) > strtotime($Hoje) && $account_logged->getId() == $getAuction['account_old']) { ?>
-                                                                <div class="AuctionBodyBlock CurrentBid">
-                                                                    <div class="Container">
-                                                                        <div class="MyMaxBidLabel"
-                                                                             style="font-weight: normal;">My auction.
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            <?php } ?>
-                                                            <?php if (strtotime($End) < strtotime($Hoje) && $account_logged->getId() != $getAuction['account_old'] && $account_logged->getId() != $getAuction['bid_account']) { ?>
-                                                                <div class="AuctionBodyBlock CurrentBid">
-                                                                    <div class="Container">
-                                                                        <div class="MyMaxBidLabel"
-                                                                             style="font-weight: bold; color: green;">
-                                                                            finished
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                            <?php } ?>
-                                                        <?php } ?>
-                                                       
-                                                        <div class="AuctionBodyBlock SpecialCharacterFeatures">
-                                                            <div class="Entry">
-                                                                <img class="CharacterFeatureCategory"
-                                                                     src="<?= $template_path; ?>/images/charactertrade/usp-category-3.png">Blessings
-                                                                active: <?= $BlessCount ?>/7, Twist of Fate
-                                                                active: <?= $BlessTwist ?>
-                                                            </div>
-                                                            <div class="Entry">
-                                                                <img class="CharacterFeatureCategory"
-                                                                     src="<?= $template_path; ?>/images/charactertrade/usp-category-7.png">Total
-                                                                Charm Points <?= $Charm_Points ?>, Unused
-                                                                Charm Points: <?= $Charm_UsedPoints ?>
-                                                            </div>
-                                                            <div class="Entry">
-                                                                <img class="CharacterFeatureCategory"
-                                                                     src="<?= $template_path; ?>/images/charactertrade/usp-category-0.png">10
-                                                                Distance Fighting (Loyalty bonus not included)
-                                                            </div>
-                                                            <div class="Entry">
-                                                                <img class="CharacterFeatureCategory"
-                                                                     src="<?= $template_path; ?>/images/charactertrade/usp-category-0.png">10
-                                                                Shielding (Loyalty bonus not included)
-                                                            </div>
+                                                                    <?php if ($logged && $getAuction['status'] == 0) { ?>
+                                                                        <?php if (strtotime($End) > strtotime($Hoje) && $account_logged->getId() != $getAuction['account_old']) { ?>
+                                                                            <div class="AuctionBodyBlock CurrentBid">
+                                                                                <div class="Container">
+                                                                                    <div class="MyMaxBidLabel">My Bid
+                                                                                        <span
+                                                                                            style="position: relative; top: 3px; margin-left: 5px;">
+                                                                                            <span class="HelperDivIndicator"
+                                                                                                onmouseover="ActivateHelperDiv($(this), '', '&lt;p&gt;Place your bid and wait for the auction to end. If your bid remains the highest when the auction ends, this character will be yours!&lt;/p&gt;', '');"
+                                                                                                onmouseout="$('#HelperDivContainer').hide();">
+                                                                                                <img style="border:0px;"
+                                                                                                    src="<?= $template_path; ?>/images/global/content/info.gif">
+                                                                                            </span>
+                                                                                        </span>
+                                                                                    </div>
+                                                                                    <form
+                                                                                        action="?subtopic=currentcharactertrades&action=bid"
+                                                                                        method="POST">
+                                                                                        <input type="hidden" name="auction_iden"
+                                                                                            value="<?= $getAuction['id'] ?>">
+                                                                                        <input class="MyMaxBidInput" type="text"
+                                                                                            name="maxbid">
+                                                                                        <div class="BigButton"
+                                                                                            style="background-image:url(<?= $template_path; ?>/images/global/buttons/sbutton_green.gif)">
+                                                                                            <div onmouseover="MouseOverBigButton(this);"
+                                                                                                onmouseout="MouseOutBigButton(this);">
+                                                                                                <div class="BigButtonOver"
+                                                                                                    style="background-image: url(<?= $template_path; ?>/images/global/buttons/sbutton_green_over.gif); visibility: hidden;">
+                                                                                                </div>
+                                                                                                <input name="auction_confirm"
+                                                                                                    class="BigButtonText"
+                                                                                                    type="submit"
+                                                                                                    value="Bid On Auction">
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </form>
+                                                                                </div>
+                                                                            </div>
+                                                                        <?php } ?>
+                                                                        <?php if (strtotime($End) > strtotime($Hoje) && $account_logged->getId() == $getAuction['account_old']) { ?>
+                                                                            <div class="AuctionBodyBlock CurrentBid">
+                                                                                <div class="Container">
+                                                                                    <div class="MyMaxBidLabel"
+                                                                                        style="font-weight: normal;">My auction.
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        <?php } ?>
+                                                                        <?php if (strtotime($End) < strtotime($Hoje) && $account_logged->getId() != $getAuction['account_old'] && $account_logged->getId() != $getAuction['bid_account']) { ?>
+                                                                            <div class="AuctionBodyBlock CurrentBid">
+                                                                                <div class="Container">
+                                                                                    <div class="MyMaxBidLabel"
+                                                                                        style="font-weight: bold; color: green;">
+                                                                                        finished
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        <?php } ?>
+                                                                    <?php } ?>
 
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </td>
-        </tr>
+                                                                    <div
+                                                                        class="AuctionBodyBlock SpecialCharacterFeatures">
+                                                                        <div class="Entry">
+                                                                            <img class="CharacterFeatureCategory"
+                                                                                src="<?= $template_path; ?>/images/charactertrade/usp-category-3.png">Blessings
+                                                                            active: <?= $BlessCount ?>/7, Twist of Fate
+                                                                            active: <?= $BlessTwist ?>
+                                                                        </div>
+                                                                        <div class="Entry">
+                                                                            <img class="CharacterFeatureCategory"
+                                                                                src="<?= $template_path; ?>/images/charactertrade/usp-category-7.png">Total
+                                                                            Charm Points <?= $Charm_Points ?>, Unused
+                                                                            Charm Points: <?= $Charm_UsedPoints ?>
+                                                                        </div>
+                                                                        <div class="Entry">
+                                                                            <img class="CharacterFeatureCategory"
+                                                                                src="<?= $template_path; ?>/images/charactertrade/usp-category-0.png">10
+                                                                            Distance Fighting (Loyalty bonus not
+                                                                            included)
+                                                                        </div>
+                                                                        <div class="Entry">
+                                                                            <img class="CharacterFeatureCategory"
+                                                                                src="<?= $template_path; ?>/images/charactertrade/usp-category-0.png">10
+                                                                            Shielding (Loyalty bonus not included)
+                                                                        </div>
+
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
         </tbody>
     </table>
 </div>
 <br>
 <center>
     <a href="?subtopic=<?= $subtopic == 'currentcharactertrades' ? 'currentcharactertrades' : 'pastcharactertrades' ?>">
-        <div class="BigButton"
-             style="background-image:url(<?= $template_path; ?>/images/global/buttons/sbutton.gif)">
+        <div class="BigButton" style="background-image:url(<?= $template_path; ?>/images/global/buttons/sbutton.gif)">
             <div onmouseover="MouseOverBigButton(this);" onmouseout="MouseOutBigButton(this);">
                 <div class="BigButtonOver"
-                     style="background-image: url(<?= $template_path; ?>/images/global/buttons/sbutton_over.gif); visibility: hidden;"></div>
-                <input name="auction_confirm" class="BigButtonText" type="button" value="Back"></div>
+                    style="background-image: url(<?= $template_path; ?>/images/global/buttons/sbutton_over.gif); visibility: hidden;">
+                </div>
+                <input name="auction_confirm" class="BigButtonText" type="button" value="Back">
+            </div>
         </div>
     </a>
 </center>
@@ -418,269 +516,239 @@ $End = date('Y-m-d H:i:s', strtotime($getAuction['date_end']));
     <div class="CaptionContainer">
         <div class="CaptionInnerContainer">
             <span class="CaptionEdgeLeftTop"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightTop"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionBorderTop"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionVerticalLeft"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
             <div class="Text">General</div>
             <span class="CaptionVerticalRight"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
             <span class="CaptionBorderBottom"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionEdgeLeftBottom"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightBottom"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
         </div>
     </div>
     <table class="Table5" cellspacing="0" cellpadding="0">
         <tbody>
-        <tr>
-            <td>
-                <div class="InnerTableContainer">
-                    <table style="width:100%;">
-                        <tbody>
-                        <tr>
-                            <td>
-                                <table style="width: 100%;" cellspacing="0" cellpadding="0">
-                                    <tbody>
-                                    <tr>
-                                        <td style="vertical-align:top;width:210px;;">
-                                            <div class="TableContentContainer">
-                                                <table class="TableContent" style="border:1px solid #faf0d7;"
-                                                       width="100%">
-                                                    <tbody>
+            <tr>
+                <td>
+                    <div class="InnerTableContainer">
+                        <table style="width:100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <table style="width: 100%;" cellspacing="0" cellpadding="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="vertical-align:top;width:210px;;">
+                                                        <div class="TableContentContainer">
+                                                            <table class="TableContent"
+                                                                style="border:1px solid #faf0d7;" width="100%">
+                                                                <tbody>
+                                                                    <tr class="Even">
+                                                                        <td><span class="LabelV">Health:</span>
+                                                                            <div
+                                                                                style="float:right; text-align: right;">
+                                                                                <?= $character['health'] ?>
+                                                                                / <?= $character['healthmax'] ?></div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Odd">
+                                                                        <td><span class="LabelV">Mana:</span>
+                                                                            <div
+                                                                                style="float:right; text-align: right;">
+                                                                                <?= $character['mana'] ?>
+                                                                                / <?= $character['manamax'] ?></div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Even">
+                                                                        <td><span class="LabelV">Capacity:</span>
+                                                                            <div
+                                                                                style="float:right; text-align: right;">
+                                                                                <?= $character['cap'] ?></div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Odd">
+                                                                        <td><span class="LabelV">Soul:</span>
+                                                                            <div
+                                                                                style="float:right; text-align: right;">
+                                                                                <?= $character['soul'] ?></div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Even">
+                                                                        <td><span class="LabelV">Blessings:</span>
+                                                                            <div
+                                                                                style="float:right; text-align: right;">
+                                                                                <?= $BlessCount ?>
+                                                                                /7
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Odd">
+                                                                        <td><span class="LabelV">Mounts:</span>
+                                                                            <div
+                                                                                style="float:right; text-align: right;">
+                                                                                0</div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Even">
+                                                                        <td><span class="LabelV">Outfits:</span>
+                                                                            <div
+                                                                                style="float:right; text-align: right;">
+                                                                                0</div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Odd">
+                                                                        <td><span class="LabelV">Titles:</span>
+                                                                            <div
+                                                                                style="float:right; text-align: right;">
+                                                                                0</div>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <div class="TableContentContainer">
+                                                            <table class="TableContent"
+                                                                style="border:1px solid #faf0d7;" width="100%">
+                                                                <tbody>
+                                                                    <tr class="Even">
+                                                                        <td class="LabelColumn"><b>Axe Fighting</b></td>
+                                                                        <td class="LevelColumn"><?= $character['skill_axe'] ?></td>
+                                                                        <td class="PercentageColumn">
+                                                                            <div class="PercentageBar" style="width: <?= $skillPercentages['axe'] ?>%"></div>
+                                                                            <span class="PercentageString"><?= $skillPercentages['axe'] ?>%</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Odd">
+                                                                        <td class="LabelColumn"><b>Club Fighting</b></td>
+                                                                        <td class="LevelColumn"><?= $character['skill_club'] ?></td>
+                                                                        <td class="PercentageColumn">
+                                                                            <div class="PercentageBar" style="width: <?= $skillPercentages['club'] ?>%"></div>
+                                                                            <span class="PercentageString"><?= $skillPercentages['club'] ?>%</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Even">
+                                                                        <td class="LabelColumn"><b>Distance Fighting</b></td>
+                                                                        <td class="LevelColumn"><?= $character['skill_dist'] ?></td>
+                                                                        <td class="PercentageColumn">
+                                                                            <div class="PercentageBar" style="width: <?= $skillPercentages['dist'] ?>%"></div>
+                                                                            <span class="PercentageString"><?= $skillPercentages['dist'] ?>%</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Odd">
+                                                                        <td class="LabelColumn"><b>Fishing</b></td>
+                                                                        <td class="LevelColumn"><?= $character['skill_fishing'] ?></td>
+                                                                        <td class="PercentageColumn">
+                                                                            <div class="PercentageBar" style="width: <?= $skillPercentages['fishing'] ?>%"></div>
+                                                                            <span class="PercentageString"><?= $skillPercentages['fishing'] ?>%</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Even">
+                                                                        <td class="LabelColumn"><b>Fist Fighting</b></td>
+                                                                        <td class="LevelColumn"><?= $character['skill_fist'] ?></td>
+                                                                        <td class="PercentageColumn">
+                                                                            <div class="PercentageBar" style="width: <?= $skillPercentages['fist'] ?>%"></div>
+                                                                            <span class="PercentageString"><?= $skillPercentages['fist'] ?>%</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Odd">
+                                                                        <td class="LabelColumn"><b>Magic Level</b></td>
+                                                                        <td class="LevelColumn"><?= $character['maglevel'] ?></td>
+                                                                        <td class="PercentageColumn">
+                                                                            <div class="PercentageBar" style="width: <?= OTS_Player::getMagicLevelPercent($character) ?>%"></div>
+                                                                            <span class="PercentageString"><?= OTS_Player::getMagicLevelPercent($character) ?>%</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Even">
+                                                                        <td class="LabelColumn"><b>Shielding</b></td>
+                                                                        <td class="LevelColumn"><?= $character['skill_shielding'] ?></td>
+                                                                        <td class="PercentageColumn">
+                                                                            <div class="PercentageBar" style="width: <?= $skillPercentages['shielding'] ?>%"></div>
+                                                                            <span class="PercentageString"><?= $skillPercentages['shielding'] ?>%</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr class="Odd">
+                                                                        <td class="LabelColumn"><b>Sword Fighting</b></td>
+                                                                        <td class="LevelColumn"><?= $character['skill_sword'] ?></td>
+                                                                        <td class="PercentageColumn">
+                                                                            <div class="PercentageBar" style="width: <?= $skillPercentages['sword'] ?>%"></div>
+                                                                            <span class="PercentageString"><?= $skillPercentages['sword'] ?>%</span>
+                                                                        </td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="TableContentContainer">
+                                            <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
+                                                <tbody>
                                                     <tr class="Even">
-                                                        <td><span class="LabelV">Health:</span>
-                                                            <div
-                                                                style="float:right; text-align: right;"><?= $character['health'] ?>
-                                                                / <?= $character['healthmax'] ?></div>
+                                                        <td><span class="LabelV">Creation Date:</span>
+                                                            <div style="float:right; text-align: right;">
+                                                                <?= date('d M Y, H:i:s', $character['created']) ?></div>
                                                         </td>
                                                     </tr>
                                                     <tr class="Odd">
-                                                        <td><span class="LabelV">Mana:</span>
-                                                            <div
-                                                                style="float:right; text-align: right;"><?= $character['mana'] ?>
-                                                                / <?= $character['manamax'] ?></div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="Even">
-                                                        <td><span class="LabelV">Capacity:</span>
-                                                            <div
-                                                                style="float:right; text-align: right;"><?= $character['cap'] ?></div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="Odd">
-                                                        <td><span class="LabelV">Soul:</span>
-                                                            <div
-                                                                style="float:right; text-align: right;"><?= $character['soul'] ?></div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="Even">
-                                                        <td><span class="LabelV">Blessings:</span>
-                                                            <div
-                                                                style="float:right; text-align: right;"><?= $BlessCount ?>
-                                                                /7
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="Odd">
-                                                        <td><span class="LabelV">Mounts:</span>
-                                                            <div style="float:right; text-align: right;">0</div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="Even">
-                                                        <td><span class="LabelV">Outfits:</span>
-                                                            <div style="float:right; text-align: right;">0</div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="Odd">
-                                                        <td><span class="LabelV">Titles:</span>
-                                                            <div style="float:right; text-align: right;">0</div>
-                                                        </td>
-                                                    </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div class="TableContentContainer">
-                                                <table class="TableContent" style="border:1px solid #faf0d7;"
-                                                       width="100%">
-                                                    <tbody>
-                                                    <tr class="Even">
-                                                        <td class="LabelColumn"><b>Axe Fighting</b></td>
-                                                        <td class="LevelColumn"><?= $character['skill_axe'] ?></td>
-                                                        <td class="PercentageColumn">
-                                                            <div id="SkillBar" class="PercentageBar"
-                                                                 style="width: <?= $character['skill_axe_tries'] ?>%">
-                                                                <div class="PercentageBarSpacer"></div>
-                                                            </div>
-                                                            <div class="PercentageStringContainer"><span
-                                                                    class="PercentageString"><?= $character['skill_axe_tries'] ?> %</span>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="Odd">
-                                                        <td class="LabelColumn"><b>Club Fighting</b></td>
-                                                        <td class="LevelColumn"><?= $character['skill_club'] ?></td>
-                                                        <td class="PercentageColumn">
-                                                            <div id="SkillBar" class="PercentageBar"
-                                                                 style="width: <?= $character['skill_club_tries'] ?>%">
-                                                                <div class="PercentageBarSpacer"></div>
-                                                            </div>
-                                                            <div class="PercentageStringContainer"><span
-                                                                    class="PercentageString"><?= $character['skill_club_tries'] ?> %</span>
+                                                        <td><span class="LabelV">Experience:</span>
+                                                            <div style="float:right; text-align: right;">
+                                                                <?= number_format($character['experience'], 0, ',', ',') ?>
                                                             </div>
                                                         </td>
                                                     </tr>
                                                     <tr class="Even">
-                                                        <td class="LabelColumn"><b>Distance Fighting</b></td>
-                                                        <td class="LevelColumn"><?= $character['skill_dist'] ?></td>
-                                                        <td class="PercentageColumn">
-                                                            <div id="SkillBar" class="PercentageBar"
-                                                                 style="width: <?= $character['skill_dist_tries'] ?>%">
-                                                                <div class="PercentageBarSpacer"></div>
-                                                            </div>
-                                                            <div class="PercentageStringContainer"><span
-                                                                    class="PercentageString"><?= $character['skill_dist_tries'] ?> %</span>
-                                                            </div>
+                                                        <td><span class="LabelV">Gold:</span>
+                                                            <div style="float:right; text-align: right;">
+                                                                <?= $character['balance'] ?></div>
                                                         </td>
                                                     </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <div class="TableContentContainer">
+                                            <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
+                                                <tbody>
                                                     <tr class="Odd">
-                                                        <td class="LabelColumn"><b>Fishing</b></td>
-                                                        <td class="LevelColumn"><?= $character['skill_fishing'] ?></td>
-                                                        <td class="PercentageColumn">
-                                                            <div id="SkillBar" class="PercentageBar"
-                                                                 style="width: <?= $character['skill_fishing_tries'] ?>%">
-                                                                <div class="PercentageBarSpacer"></div>
-                                                            </div>
-                                                            <div class="PercentageStringContainer"><span
-                                                                    class="PercentageString"><?= $character['skill_fishing_tries'] ?> %</span>
-                                                            </div>
+                                                        <td><span class="LabelV">Charm Expansion:</span>
+                                                            <div style="float:right; text-align: right;">
+                                                                <?= $Charm_Expansion ?></div>
                                                         </td>
                                                     </tr>
                                                     <tr class="Even">
-                                                        <td class="LabelColumn"><b>Fist Fighting</b></td>
-                                                        <td class="LevelColumn"><?= $character['skill_fist'] ?></td>
-                                                        <td class="PercentageColumn">
-                                                            <div id="SkillBar" class="PercentageBar"
-                                                                 style="width: <?= $character['skill_fist_tries'] ?>%">
-                                                                <div class="PercentageBarSpacer"></div>
-                                                            </div>
-                                                            <div class="PercentageStringContainer"><span
-                                                                    class="PercentageString"><?= $character['skill_fist_tries'] ?> %</span>
-                                                            </div>
+                                                        <td><span class="LabelV">Available Charm Points:</span>
+                                                            <div style="float:right; text-align: right;">
+                                                                <?= $Charm_Points ?></div>
                                                         </td>
                                                     </tr>
-                                                    <tr class="Odd">
-                                                        <td class="LabelColumn"><b>Magic Level</b></td>
-                                                        <td class="LevelColumn"><?= $character['maglevel'] ?></td>
-                                                        <td class="PercentageColumn">
-                                                            <div id="SkillBar" class="PercentageBar"
-                                                                 style="width: <?= OTS_Player::getMagicLevelPercent($character) ?>%">
-                                                                <div class="PercentageBarSpacer"></div>
-                                                            </div>
-                                                            <div class="PercentageStringContainer">
-                                                                <span class="PercentageString">
-                                                                    <?= OTS_Player::getMagicLevelPercent($character) ?> %
-                                                                </span>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="Even">
-                                                        <td class="LabelColumn"><b>Shielding</b></td>
-                                                        <td class="LevelColumn"><?= $character['skill_shielding'] ?></td>
-                                                        <td class="PercentageColumn">
-                                                            <div id="SkillBar" class="PercentageBar"
-                                                                 style="width: <?= $character['skill_shielding_tries'] ?>%">
-                                                                <div class="PercentageBarSpacer"></div>
-                                                            </div>
-                                                            <div class="PercentageStringContainer"><span
-                                                                    class="PercentageString"><?= $character['skill_shielding_tries'] ?> %</span>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    <tr class="Odd">
-                                                        <td class="LabelColumn"><b>Sword Fighting</b></td>
-                                                        <td class="LevelColumn"><?= $character['skill_sword'] ?></td>
-                                                        <td class="PercentageColumn">
-                                                            <div id="SkillBar" class="PercentageBar"
-                                                                 style="width: <?= $character['skill_sword_tries'] ?>%">
-                                                                <div class="PercentageBarSpacer"></div>
-                                                            </div>
-                                                            <div class="PercentageStringContainer"><span
-                                                                    class="PercentageString"><?= $character['skill_sword_tries'] ?> %</span>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    </tbody>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="TableContentContainer">
-                                    <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
-                                        <tbody>
-                                        <tr class="Even">
-                                            <td><span class="LabelV">Creation Date:</span>
-                                                <div
-                                                    style="float:right; text-align: right;"><?= date('d M Y, H:i:s', $character['created']) ?></div>
-                                            </td>
-                                        </tr>
-                                        <tr class="Odd">
-                                            <td><span class="LabelV">Experience:</span>
-                                                <div
-                                                    style="float:right; text-align: right;"><?= number_format($character['experience'], 0, ',', ',') ?></div>
-                                            </td>
-                                        </tr>
-                                        <tr class="Even">
-                                            <td><span class="LabelV">Gold:</span>
-                                                <div
-                                                    style="float:right; text-align: right;"><?= $character['balance'] ?></div>
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class="TableContentContainer">
-                                    <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
-                                        <tbody>
-                                        <tr class="Odd">
-                                            <td><span class="LabelV">Charm Expansion:</span>
-                                                <div
-                                                    style="float:right; text-align: right;"><?= $Charm_Expansion ?></div>
-                                            </td>
-                                        </tr>
-                                        <tr class="Even">
-                                            <td><span class="LabelV">Available Charm Points:</span>
-                                                <div
-                                                    style="float:right; text-align: right;"><?= $Charm_Points ?></div>
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </td>
-        </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
         </tbody>
     </table>
 </div>
@@ -696,56 +764,56 @@ $End = date('Y-m-d H:i:s', strtotime($getAuction['date_end']));
     <div class="CaptionContainer">
         <div class="CaptionInnerContainer">
             <span class="CaptionEdgeLeftTop"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightTop"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionBorderTop"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionVerticalLeft"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
             <div class="Text">Item Summary</div>
             <span class="CaptionVerticalRight"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
             <span class="CaptionBorderBottom"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionEdgeLeftBottom"
-                  style="background-image:url(<?= $template_path; ?>https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightBottom"
-                  style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
         </div>
     </div>
     <table class="Table3" cellspacing="0" cellpadding="0">
         <tbody>
-        <tr>
-            <td>
-                <div class="InnerTableContainer">
-                    <table style="width:100%;">
-                        <tbody>
-                        <tr>
-                            <td>
-                                <div class="TableContentContainer">
-                                    <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
-                                        <tbody>
-                                        <tr class="Even tmp-container-ItemSummary">
-                                            <td>
-                                                <div id="ajax-target-type-0"
-                                                     class="paged-container page-object-container">
+            <tr>
+                <td>
+                    <div class="InnerTableContainer">
+                        <table style="width:100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="TableContentContainer">
+                                            <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
+                                                <tbody>
+                                                    <tr class="Even tmp-container-ItemSummary">
+                                                        <td>
+                                                            <div id="ajax-target-type-0"
+                                                                class="paged-container page-object-container">
 
-                                                    <div class="BlockPage BlockPageObject">
-                                                        <div style="text-align: center;">Em breve.</div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </td>
-        </tr>
+                                                                <div class="BlockPage BlockPageObject">
+                                                                    <div style="text-align: center;">Em breve.</div>
+                                                                </div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
         </tbody>
     </table>
 </div>
@@ -759,23 +827,23 @@ $End = date('Y-m-d H:i:s', strtotime($getAuction['date_end']));
     <div class="TableContainer">
         <div class="CaptionContainer">
             <div class="CaptionInnerContainer">
-                    <span class="CaptionEdgeLeftTop"
-                          style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                <span class="CaptionEdgeLeftTop"
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
                 <span class="CaptionEdgeRightTop"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
                 <span class="CaptionBorderTop"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
                 <span class="CaptionVerticalLeft"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
                 <div class="Text">Charms</div>
                 <span class="CaptionVerticalRight"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
                 <span class="CaptionBorderBottom"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
                 <span class="CaptionEdgeLeftBottom"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
                 <span class="CaptionEdgeRightBottom"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             </div>
         </div>
         <?php
@@ -793,35 +861,36 @@ $End = date('Y-m-d H:i:s', strtotime($getAuction['date_end']));
         ?>
         <table class="Table3" cellspacing="0" cellpadding="0">
             <tbody>
-            <tr>
-                <td>
-                    <div class="InnerTableContainer">
-                        <table style="width:100%;">
-                            <tbody>
-                            <tr>
-                                <td>
-                                    <div class="TableContentContainer">
-                                        <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
-                                            <tbody>
-                                            <?php foreach ($charmNames as $k => $charm) { ?>
-                                                <tr class="<?= $k % 2 == 0 ? 'Even' : 'Odd' ?>">
-                                                    <td>
-                                                        <?= $runes["rune_$charm"] ?>
-                                                        Rune <?= ucwords(str_replace('_', ' ', $charm)) ?>
-                                                    </td>
-                                                </tr>
-                                            <?php } ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
+                <tr>
+                    <td>
+                        <div class="InnerTableContainer">
+                            <table style="width:100%;">
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="TableContentContainer">
+                                                <table class="TableContent" style="border:1px solid #faf0d7;"
+                                                    width="100%">
+                                                    <tbody>
+                                                        <?php foreach ($charmNames as $k => $charm) { ?>
+                                                            <tr class="<?= $k % 2 == 0 ? 'Even' : 'Odd' ?>">
+                                                                <td>
+                                                                    <?= $runes["rune_$charm"] ?>
+                                                                    Rune <?= ucwords(str_replace('_', ' ', $charm)) ?>
+                                                                </td>
+                                                            </tr>
+                                                        <?php } ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
 
-                    </div>
-                </td>
-            </tr>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
@@ -836,58 +905,59 @@ $End = date('Y-m-d H:i:s', strtotime($getAuction['date_end']));
     <div class="TableContainer">
         <div class="CaptionContainer">
             <div class="CaptionInnerContainer"><span class="CaptionEdgeLeftTop"
-                                                     style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
                 <span class="CaptionEdgeRightTop"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
                 <span class="CaptionBorderTop"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
                 <span class="CaptionVerticalLeft"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
                 <div class="Text">Completed Quest Lines</div>
                 <span class="CaptionVerticalRight"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-vertical.gif);"></span>
                 <span class="CaptionBorderBottom"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/table-headline-border.gif);"></span>
                 <span class="CaptionEdgeLeftBottom"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
                 <span class="CaptionEdgeRightBottom"
-                      style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
+                    style="background-image:url(<?= $template_path; ?>/images/global/content/box-frame-edge.gif);"></span>
             </div>
         </div>
         <table class="Table3" cellspacing="0" cellpadding="0">
             <tbody>
-            <tr>
-                <td>
-                    <div class="InnerTableContainer">
-                        <table style="width:100%;">
-                            <tbody>
-                            <tr>
-                                <td>
-                                    <div class="TableContentContainer">
-                                        <table class="TableContent" style="border:1px solid #faf0d7;" width="100%">
-                                            <tbody>
-                                            <tr class="LabelH">
-                                                <td>Quest Line Name</td>
-                                            </tr>
-                                            <?php
-                                            $i_bg = 0;
-                                            foreach ($quests as $quest_name => $quest_storage) {
-                                                $i_bg = $i_bg + 1;
-                                                ?>
-                                                <tr bgcolor="<?= getStyle($i_bg) ?>">
-                                                    <td> <?= $quest_name; ?></td>
-                                                </tr>
-                                            <?php } ?>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </td>
-            </tr>
+                <tr>
+                    <td>
+                        <div class="InnerTableContainer">
+                            <table style="width:100%;">
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <div class="TableContentContainer">
+                                                <table class="TableContent" style="border:1px solid #faf0d7;"
+                                                    width="100%">
+                                                    <tbody>
+                                                        <tr class="LabelH">
+                                                            <td>Quest Line Name</td>
+                                                        </tr>
+                                                        <?php
+                                                        $i_bg = 0;
+                                                        foreach ($quests as $quest_name => $quest_storage) {
+                                                            $i_bg = $i_bg + 1;
+                                                            ?>
+                                                            <tr bgcolor="<?= getStyle($i_bg) ?>">
+                                                                <td> <?= $quest_name; ?></td>
+                                                            </tr>
+                                                        <?php } ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
