@@ -14,8 +14,9 @@ if ($config['account_country'] && $config['highscores_country_box'])
     require SYSTEM . 'countries.conf.php';
 
 $list = $_GET['list'] ?? '';
+$world = $_GET['world'] ?? '';
+$vocation = $_GET['vocation'] ?? "";
 $_page = $_GET['page'] ?? 0;
-$vocation = $_GET['vocation'] ?? null;
 
 if (!is_numeric($_page) || $_page < 0 || $_page > PHP_INT_MAX) {
     $_page = 0;
@@ -25,36 +26,36 @@ $add_sql = '';
 $config_vocations = $config['vocations'];
 
 $normalized_vocations = array_map('strtolower', $config_vocations);
-if (!isset($vocation) || is_null($vocation) || !array_search(strtolower((string)$vocation), $normalized_vocations)) {
-    $vocation = "None";
-}
+if (strtolower($vocation) != 'none' && !array_search(strtolower($vocation), $normalized_vocations))
+    $vocation = "";
 
 if ($config['highscores_vocation_box'] && isset($vocation)) {
-    foreach ($config['vocations'] as $id => $name) {
-        if (strtolower($name) == $vocation) {
-            $add_vocs = [$id];
+    if (strtolower($vocation) == 'none') {
+        $add_sql = ' AND `vocation` = 0 ';
+    } else {
+        foreach ($config_vocations as $id => $name) {
+            if (strtolower($name) == $vocation) {
+                $add_vocs = array($id);
 
-    // Force include promoted Exalted Monk if base is Monk
-    if ($id == 9) {
-        $add_vocs[] = 10;
-    }
-    $promotion_map = [
-    1 => [5],      // Sorcerer ? Master Sorcerer
-    2 => [6],      // Druid ? Elder Druid
-    3 => [7],      // Paladin ? Royal Paladin
-    4 => [8],      // Knight ? Elite Knight
-    9 => [10],     // Monk ? Exalted Monk
-];
+                $i = $id + $config['vocations_amount'];
+                while (isset($config_vocations[$i])) {
+                    $add_vocs[] = $i;
+                    $i += $config['vocations_amount'];
+                }
 
-$add_vocs = [$id];
-if (isset($promotion_map[$id])) {
-    $add_vocs = array_merge($add_vocs, $promotion_map[$id]);
-}
-
-            $add_sql = 'AND `vocation` IN (' . implode(', ', $add_vocs) . ')';
-            break;
+                $add_sql = 'AND `vocation` IN (' . implode(', ', $add_vocs) . ')';
+                break;
+            }
         }
     }
+}
+
+if (!empty($world)) {
+    if (!$world = $db->query("SELECT `id`, `name` FROM `worlds` WHERE `name` = {$db->quote(urldecode($world))}")->fetch(PDO::FETCH_ASSOC) ?? null) {
+        header('Location: ' . "?highscores");
+        return;
+    }
+    $add_sql .= " AND `world_id` = {$world['id']} ";
 }
 
 define('SKILL_FRAGS', -1);
@@ -62,7 +63,7 @@ define('SKILL_BALANCE', -2);
 
 $skill = POT::SKILL_LEVEL;
 if (is_numeric($list)) {
-    $list = (int)$list;
+    $list = (int) $list;
     if ($list >= POT::SKILL_FIRST && $list <= POT::SKILL__LAST)
         $skill = $list;
 } else {
@@ -175,291 +176,297 @@ if ($skill >= POT::SKILL_FIRST && $skill <= POT::SKILL_LAST) { // skills
         $list = 'experience';
     }
 }
+
+$rank_category = $_POST['category'] ?? null;
+$rank_world = $_POST['world'] ?? null;
+$rank_vocation = $_POST['profession'] ?? null;
+
+if ($rank_category) {
+    $url = "?highscores/$rank_category";
+
+    if ($rank_world) {
+        $url .= "/$rank_world";
+    }
+
+    if ($rank_vocation) {
+        $url .= "/$rank_vocation";
+    }
+
+    header('Location: ' . $url);
+}
 ?>
 <div class="TableContainer">
     <div class="CaptionContainer">
-        <div class="CaptionInnerContainer"><span class="CaptionEdgeLeftTop"
-                                                 style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
+        <div class="CaptionInnerContainer">
+            <span class="CaptionEdgeLeftTop"
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightTop"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionBorderTop"
-                  style="background-image:url(https://static.tibia.com/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionVerticalLeft"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-vertical.gif);"></span>
             <div class="Text">Highscores Filter</div>
             <span class="CaptionVerticalRight"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-vertical.gif);"></span>
             <span class="CaptionBorderBottom"
-                  style="background-image:url(https://static.tibia.com/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionEdgeLeftBottom"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightBottom"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
         </div>
     </div>
     <table class="Table1" cellpadding="0" cellspacing="0">
         <tbody>
-        <tr>
-            <td>
-                <div class="InnerTableContainer">
-                    <table style="width:100%;">
-                        <tbody>
-                        <form method="post" action="">
-                            <tr>
-                                <td>World:</td>
-                                <td><select name="world">
-                                        <option value="0" selected>All Worlds</option>
-                                    </select></td>
-                            </tr>
-                            <tr>
-                                <td>Vocation:</td>
-                                <td>
-                                    <select name="profession">
-                                        <option value="" <?= !$vocation ? 'selected' : '' ?>>(all)</option>
-                                        <option value="knight" <?= $vocation == 'knight' ? 'selected' : '' ?>>
-                                            Knights
-                                        </option>
-                                        <option value="paladin" <?= $vocation == 'paladin' ? 'selected' : '' ?>>
-                                            Paladins
-                                        </option>
-                                        <option value="sorcerer" <?= $vocation == 'sorcerer' ? 'selected' : '' ?>>
-                                            Sorcerers
-                                        </option>
-                                        <option value="druid" <?= $vocation == 'druid' ? 'selected' : '' ?>>
-                                            Druids
-                                        </option>
-                                        <option value="monk" <?= $vocation == 'monk' ? 'selected' : '' ?>>
-                                            Monks
-                                        </option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <div class="BigButton"
-                                         style="background-image:url(https://static.tibia.com/images/global/buttons/button_blue.gif)">
-                                        <div onmouseover="MouseOverBigButton(this);"
-                                             onmouseout="MouseOutBigButton(this);">
-                                            <div class="BigButtonOver"
-                                                 style="background-image:url(https://static.tibia.com/images/global/buttons/button_blue_over.gif);"></div>
-                                            <input class="BigButtonText" type="submit" value="Submit"></div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Category:</td>
-                                <td>
-                                    <select name="category">
-                                        <option value="axe" <?= $list == 'axe' ? 'selected' : '' ?>>Axe Fighting
-                                        </option>
-                                        <option value="club" <?= $list == 'club' ? 'selected' : '' ?>>Club Fighting
-                                        </option>
-                                        <option value="distance" <?= $list == 'distance' ? 'selected' : '' ?>>Distance
-                                            Fighting
-                                        </option>
-                                        <option
-                                            value="experience" <?= $list == 'experience' || $limit == '' ? 'selected' : '' ?>>
-                                            Experience Points
-                                        </option>
-                                        <option value="fishing" <?= $list == 'fishing' ? 'selected' : '' ?>>Fishing
-                                        </option>
-                                        <option value="fist" <?= $list == 'fist' ? 'selected' : '' ?>>Fist Fighting
-                                        </option>
-                                        <option value="magic" <?= $list == 'magic' ? 'selected' : '' ?>>Magic Level
-                                        </option>
-                                        <option value="shield" <?= $list == 'shield' ? 'selected' : '' ?>>Shielding
-                                        </option>
-                                        <option value="sword" <?= $list == 'sword' ? 'selected' : '' ?>>Sword Fighting
-                                        </option>
-                                    </select>
-                                </td>
-                            </tr>
-                        </form>
-                        </tbody>
-                    </table>
-                </div>
-            </td>
-        </tr>
+            <tr>
+                <td>
+                    <div class="InnerTableContainer">
+                        <table style="width:100%;">
+                            <tbody>
+                                <form method="post" action="">
+                                    <tr>
+                                        <td>World:</td>
+                                        <td>
+                                            <select name="world">
+                                                <option value="" <?= (int) $rank_world == 0 ? 'selected' : '' ?>>All Worlds
+                                                </option>
+                                                <?php foreach (WORLDS as $item) { ?>
+                                                    <option value="<?= $item['name'] ?>" <?= $world && $item['id'] == $world['id'] ? 'selected' : '' ?>><?= $item['name'] ?>
+                                                    </option>
+                                                <?php } ?>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Vocation:</td>
+                                        <td>
+                                            <select name="profession">
+                                                <option value="" <?= !$vocation ? 'selected' : '' ?>>(all)</option>
+                                                <option value="None" <?= $vocation == 'None' ? 'selected' : '' ?>>
+                                                    None
+                                                </option>
+                                                <option value="knight" <?= $vocation == 'knight' ? 'selected' : '' ?>>
+                                                    Knights
+                                                </option>
+                                                <option value="paladin" <?= $vocation == 'paladin' ? 'selected' : '' ?>>
+                                                    Paladins
+                                                </option>
+                                                <option value="sorcerer" <?= $vocation == 'sorcerer' ? 'selected' : '' ?>>
+                                                    Sorcerers
+                                                </option>
+                                                <option value="druid" <?= $vocation == 'druid' ? 'selected' : '' ?>>
+                                                    Druids
+                                                </option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <div class="BigButton"
+                                                style="background-image:url(https://static.tibia.com/images/global/buttons/button_blue.gif)">
+                                                <div onmouseover="MouseOverBigButton(this);"
+                                                    onmouseout="MouseOutBigButton(this);">
+                                                    <div class="BigButtonOver"
+                                                        style="background-image:url(https://static.tibia.com/images/global/buttons/button_blue_over.gif);">
+                                                    </div>
+                                                    <input class="BigButtonText" type="submit" value="Submit">
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>Category:</td>
+                                        <td>
+                                            <select name="category">
+                                                <option value="axe" <?= $list == 'axe' ? 'selected' : '' ?>>Axe Fighting
+                                                </option>
+                                                <option value="club" <?= $list == 'club' ? 'selected' : '' ?>>Club Fighting
+                                                </option>
+                                                <option value="distance" <?= $list == 'distance' ? 'selected' : '' ?>>
+                                                    Distance
+                                                    Fighting
+                                                </option>
+                                                <option value="experience" <?= $list == 'experience' || $limit == '' ? 'selected' : '' ?>>
+                                                    Experience Points
+                                                </option>
+                                                <option value="fishing" <?= $list == 'fishing' ? 'selected' : '' ?>>Fishing
+                                                </option>
+                                                <option value="fist" <?= $list == 'fist' ? 'selected' : '' ?>>Fist Fighting
+                                                </option>
+                                                <option value="magic" <?= $list == 'magic' ? 'selected' : '' ?>>Magic Level
+                                                </option>
+                                                <option value="shield" <?= $list == 'shield' ? 'selected' : '' ?>>Shielding
+                                                </option>
+                                                <option value="sword" <?= $list == 'sword' ? 'selected' : '' ?>>Sword
+                                                    Fighting
+                                                </option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </form>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
         </tbody>
     </table>
 </div>
-<?php
-$rank_world = $_POST['world'] ?? null;
-$rank_category = $_POST['category'] ?? null;
-if (!$rank_vocation = $_POST['profession'] ?? null) {
-    if ($rank_category) {
-        header('Location: ?highscores/' . $rank_category);
-    }
-} else {
-    if ($rank_category) {
-        header('Location: ?highscores/' . $rank_category . '/' . $rank_vocation);
-    }
-}
-?>
 
 <p><i>Skills displayed in the Highscores do not include any bonuses (loyalty, equipment etc.).</i></p>
-
 
 <div class="TableContainer">
     <div class="CaptionContainer">
         <div class="CaptionInnerContainer">
             <span class="CaptionEdgeLeftTop"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightTop"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionBorderTop"
-                  style="background-image:url(https://static.tibia.com/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionVerticalLeft"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-vertical.gif);"></span>
             <div class="Text">Highscores</div>
             <span class="CaptionVerticalRight"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-vertical.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-vertical.gif);"></span>
             <span class="CaptionBorderBottom"
-                  style="background-image:url(https://static.tibia.com/images/global/content/table-headline-border.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/table-headline-border.gif);"></span>
             <span class="CaptionEdgeLeftBottom"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
             <span class="CaptionEdgeRightBottom"
-                  style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
+                style="background-image:url(https://static.tibia.com/images/global/content/box-frame-edge.gif);"></span>
         </div>
     </div>
     <table class="Table3" cellpadding="0" cellspacing="0">
         <tbody>
-        <tr>
-            <td>
-                <div class="InnerTableContainer">
-                    <table style="width:100%;">
-                        <tbody>
-                        <tr>
-                            <td>
-                                <div class="TableContentContainer">
-                                    <table class="TableContent" width="100%" style="border:1px solid #faf0d7;">
-                                        <tbody>
-                                        <tr class="LabelH">
-                                            <td style="width: 10%">Rank</td>
-                                            <?php if ($config['highscores_outfit']) { ?>
-                                                <td style="width: 10%">Outfit</td>
-                                            <?php } ?>
-                                            <td style="width: 30%">Name</td>
-                                            <td style="width: 20%; text-align:right">Vocation</td>
-                                            <td style="width: 10%; text-align: right">
-                                                <?= ($skill != SKILL_FRAGS && $skill != SKILL_BALANCE ? 'Level' : ($skill == SKILL_BALANCE ? 'Balance' : 'Frags')); ?>
-                                            </td>
-                                            <?php if ($skill == POT::SKILL_LEVEL) { ?>
-                                                <td style="width: 20%; text-align: right">Points</td>
-                                            <?php } ?>
-                                        </tr>
-                                        <?php
+            <tr>
+                <td>
+                    <div class="InnerTableContainer">
+                        <table style="width:100%;">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        <div class="TableContentContainer">
+                                            <table class="TableContent" width="100%" style="border:1px solid #faf0d7;">
+                                                <tbody>
+                                                    <tr class="LabelH">
+                                                        <td style="width: 10%">Rank</td>
+                                                        <?php if ($config['highscores_outfit']) { ?>
+                                                            <td style="width: 10%">Outfit</td>
+                                                        <?php } ?>
+                                                        <td style="width: 30%">Name</td>
+                                                        <td style="width: 20%; text-align:right">Vocation</td>
+                                                        <td style="width: 10%; text-align: right">
+                                                            <?= ($skill != SKILL_FRAGS && $skill != SKILL_BALANCE ? 'Level' : ($skill == SKILL_BALANCE ? 'Balance' : 'Frags')); ?>
+                                                        </td>
+                                                        <?php if ($skill == POT::SKILL_LEVEL) { ?>
+                                                            <td style="width: 20%; text-align: right">Points</td>
+                                                        <?php } ?>
+                                                    </tr>
+                                                    <?php
 
-                                        $show_link_to_next_page = false;
-                                        $i = 0;
+                                                    $show_link_to_next_page = false;
+                                                    $i = 0;
 
-                                        $online_exist = false;
-                                        if ($db->hasColumn('players', 'online'))
-                                            $online_exist = true;
+                                                    $online_exist = false;
+                                                    if ($db->hasColumn('players', 'online'))
+                                                        $online_exist = true;
 
-                                        $players = array();
-                                        foreach ($skills as $player) {
-                                            $players[] = $player['id'];
-                                        }
-
-                                        if ($db->hasTable('players_online') && count($players) > 0) {
-                                            $query = $db->query('SELECT `player_id`, 1 FROM `players_online` WHERE `player_id` IN (' . implode(', ', $players) . ')')->fetchAll();
-                                            foreach ($query as $t) {
-                                                $is_online[$t['player_id']] = true;
-                                            }
-                                        }
-
-                                        foreach ($skills as $player) {
-                                            if (isset($is_online)) {
-                                                $player['online'] = (isset($is_online[$player['id']]) ? 1 : 0);
-                                            } else {
-                                                if (!isset($player['online'])) {
-                                                    $player['online'] = 0;
-                                                }
-                                            }
-
-                                            if (++$i <= $limit) {
-                                                if ($skill == POT::SKILL_MAGLEVEL)
-                                                    $player['value'] = $player['maglevel'];
-                                                else if ($skill == POT::SKILL_LEVEL)
-                                                    $player['value'] = $player['level'];
-                                                echo '
-			<tr style="height: 64px;"><td>' . ($offset + $i) . '.</td>';
-                                                if ($config['highscores_outfit'])
-                                                    echo '<td><img style="position:absolute;margin-top:' . (in_array($player['looktype'], array(75, 266, 302)) ? '-15px;margin-left:5px' : '-45px;margin-left:-25px') . ';" src="' . $config['outfit_images_url'] . '?id=' . $player['looktype'] . ($outfit_addons ? '&addons=' . $player['lookaddons'] : '') . '&head=' . $player['lookhead'] . '&body=' . $player['lookbody'] . '&legs=' . $player['looklegs'] . '&feet=' . $player['lookfeet'] . '" alt="" /></td>';
-
-                                                echo '
-			<td>
-				<a href="' . getPlayerLink($player['name'], false) . '">
-					<span style="color: ' . ($player['online'] > 0 ? 'green' : 'red') . '">' . $player['name'] . '</span>
-				</a>';
-                                                if ($config['highscores_vocation']) {
-                                                    if (isset($player['promotion'])) {
-                                                        if ((int)$player['promotion'] > 0)
-                                                            $player['vocation'] += ($player['promotion'] * $config['vocations_amount']);
+                                                    $players = array();
+                                                    foreach ($skills as $player) {
+                                                        $players[] = $player['id'];
                                                     }
 
-                                                    $tmp = 'Unknown';
-                                                    if (isset($config['vocations'][$player['vocation']])) {
-                                                        $tmp = $config['vocations'][$player['vocation']];
+                                                    if ($db->hasTable('players_online') && count($players) > 0) {
+                                                        $query = $db->query('SELECT `player_id`, 1 FROM `players_online` WHERE `player_id` IN (' . implode(', ', $players) . ')')->fetchAll();
+                                                        foreach ($query as $t) {
+                                                            $is_online[$t['player_id']] = true;
+                                                        }
                                                     }
 
-                                                }
-                                                echo '
-			</td>
-			<td style="text-align:right;">' . $tmp . '</td>
-			<td>
-				<div style="text-align:right;">' . $player['value'] . '</div>
-			</td>';
+                                                    foreach ($skills as $player) {
+                                                        if (isset($is_online)) {
+                                                            $player['online'] = (isset($is_online[$player['id']]) ? 1 : 0);
+                                                        } else {
+                                                            if (!isset($player['online'])) {
+                                                                $player['online'] = 0;
+                                                            }
+                                                        }
 
-                                                if ($skill == POT::SKILL_LEVEL)
-                                                    echo '<td><div style="text-align:right">' . number_format($player['experience']) . '</div></td>';
+                                                        if (++$i <= $limit) {
+                                                            if ($skill == POT::SKILL_MAGLEVEL)
+                                                                $player['value'] = $player['maglevel'];
+                                                            else if ($skill == POT::SKILL_LEVEL)
+                                                                $player['value'] = $player['level'];
+                                                            echo '<tr style="height: 64px;"><td>' . ($offset + $i) . '.</td>';
+                                                            if ($config['highscores_outfit'])
+                                                                echo '<td><img style="position:absolute;margin-top:' . (in_array($player['looktype'], array(75, 266, 302)) ? '-15px;margin-left:5px' : '-45px;margin-left:-25px') . ';" src="' . $config['outfit_images_url'] . '?id=' . $player['looktype'] . ($outfit_addons ? '&addons=' . $player['lookaddons'] : '') . '&head=' . $player['lookhead'] . '&body=' . $player['lookbody'] . '&legs=' . $player['looklegs'] . '&feet=' . $player['lookfeet'] . '" alt="" /></td>';
 
-                                                echo '</tr>';
-                                            } else
-                                                $show_link_to_next_page = true;
-                                        }
+                                                            echo '<td><a href="' . getPlayerLink($player['name'], false) . '"><span style="color: ' . ($player['online'] > 0 ? 'green' : 'red') . '">' . $player['name'] . '</span></a>';
+                                                            if ($config['highscores_vocation']) {
+                                                                if (isset($player['promotion'])) {
+                                                                    if ((int) $player['promotion'] > 0)
+                                                                        $player['vocation'] += ($player['promotion'] * $config['vocations_amount']);
+                                                                }
 
-                                        if (!$i) {
-                                            $extra = ($config['highscores_outfit'] ? 1 : 0);
-                                            ?>
-                                            <tr bgcolor="<?= $config['darkborder'] ?>">
-                                                <td colspan="<?= $skill == POT::SKILL_LEVEL ? 5 + $extra : 4 + $extra ?>">
-                                                    No records yet.
-                                                </td>
-                                            </tr>
-                                        <?php }
-                                        //link to previous page if actual page is not first
-                                        if ($_page > 0) {
-                                            ?>
-                                            <tr>
-                                                <td colspan="2" width="100%" align="right" valign="bottom">
-                                                    <a href="<?= getLink('highscores') . '/' . $list . (isset($vocation) ? '/' . $vocation : '') . '/' . ($_page - 1) ?>"
-                                                       class="size_xxs">Previous Page</a>
-                                                </td>
-                                            </tr>
-                                            <?php
-                                        }
-                                        //link to next page if any result will be on next page
-                                        if ($show_link_to_next_page) {
-                                            ?>
-                                            <tr>
-                                                <td colspan="2" width="100%" align="right" valign="bottom">
-                                                    <a href="<?= getLink('highscores') . '/' . $list . (isset($vocation) ? '/' . $vocation : '') . '/' . ($_page + 1) ?>"
-                                                       class="size_xxs">Next Page</a>
-                                                </td>
-                                            </TR>
-                                            <?php
-                                        }
-                                        ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </td>
-        </tr>
+                                                                $tmp = 'Unknown';
+                                                                if (isset($config_vocations[$player['vocation']])) {
+                                                                    $tmp = $config_vocations[$player['vocation']];
+                                                                }
+
+                                                            }
+                                                            echo '</td><td style="text-align:right;">' . $tmp . '</td><td><div style="text-align:right;">' . $player['value'] . '</div></td>';
+
+                                                            if ($skill == POT::SKILL_LEVEL)
+                                                                echo '<td><div style="text-align:right">' . number_format($player['experience']) . '</div></td>';
+
+                                                            echo '</tr>';
+                                                        } else
+                                                            $show_link_to_next_page = true;
+                                                    }
+
+                                                    if (!$i) {
+                                                        $extra = ($config['highscores_outfit'] ? 1 : 0);
+                                                        ?>
+                                                        <tr bgcolor="<?= $config['darkborder'] ?>">
+                                                            <td
+                                                                colspan="<?= $skill == POT::SKILL_LEVEL ? 5 + $extra : 4 + $extra ?>">
+                                                                No records yet.
+                                                            </td>
+                                                        </tr>
+                                                    <?php }
+                                                    //link to previous page if actual page is not first
+                                                    if ($_page > 0) {
+                                                        ?>
+                                                        <tr>
+                                                            <td colspan="2" width="100%" align="right" valign="bottom">
+                                                                <a href="<?= getLink('highscores') . '/' . $list . ($world ? '/' . $world['name'] : '') . (isset($vocation) ? '/' . $vocation : '') . '/' . ($_page - 1) ?>"
+                                                                    class="size_xxs">Previous Page</a>
+                                                            </td>
+                                                        </tr>
+                                                        <?php
+                                                    }
+                                                    //link to next page if any result will be on next page
+                                                    if ($show_link_to_next_page) {
+                                                        ?>
+                                                        <tr>
+                                                            <td colspan="2" width="100%" align="right" valign="bottom">
+                                                                <a href="<?= getLink('highscores') . '/' . $list . ($world ? '/' . $world['name'] : '') . (isset($vocation) ? '/' . $vocation : '') . '/' . ($_page + 1) ?>"
+                                                                    class="size_xxs">Next Page</a>
+                                                            </td>
+                                                        </TR>
+                                                        <?php
+                                                    }
+                                                    ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </td>
+            </tr>
         </tbody>
     </table>
 </div>

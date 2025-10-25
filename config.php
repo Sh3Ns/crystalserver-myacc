@@ -56,7 +56,7 @@ $config = array(
 	'title_separator' => ' - ',
 
 	// footer
-	'footer' => ''/*'<br/>Your Server &copy; 2016. All rights reserved.'*/,
+	'footer' => ''/*'<br/>Your Server &copy; 2016. All rights reserved.'*/ ,
 
 	'language' => 'en', // default language (currently only 'en' available)
 	'language_allow_change' => false,
@@ -80,15 +80,8 @@ $config = array(
 	'database_persistent' => false, // use database permanent connection (like server), may speed up your site
 	'database_encryption' => 'sha1',
 
-	// multiworld system (only TFS 0.3)
-	'multiworld' => false, // use multiworld system?
-	'worlds' => array( // list of worlds
-		//'1' => 'Your World Name',
-		//'2' => 'Your Second World Name'
-	),
-
 	// images
-	'outfit_images_url' => './outfit/animoutfit.php', // set to animoutfit.php for animated outfit
+	'outfit_images_url' => './animated-outfits/animoutfit.php', // set to animoutfit.php for animated outfit
 	'item_images_url' => 'images/items/', // set to images/items if you host your own items in images folder
 
 	// account
@@ -136,7 +129,7 @@ $config = array(
 	'mail_address' => 'no-reply@your-server.org', // server e-mail address (from:)
 	'mail_admin' => 'your-address@your-server.org', // admin email address, where mails from contact form will be sent
 	'mail_signature' => array( // signature that will be included at the end of every message sent using _mail function
-		'plain' => ""/*"--\nMy Server,\nhttp://www.myserver.com"*/,
+		'plain' => ""/*"--\nMy Server,\nhttp://www.myserver.com"*/ ,
 		'html' => ''/*'<br/>My Server,\n<a href="http://www.myserver.com">myserver.com</a>'*/
 	),
 	'smtp_enabled' => false, // send by smtp or mail function (set false if use mail function, set to true if you use GMail or Microsoft Outlook)
@@ -170,7 +163,7 @@ $config = array(
 
 	// vocations
 	'vocations' => array(
-		0 => 'None',
+		0 => 'HLSrv',
 		1 => 'Sorcerer',
 		2 => 'Druid',
 		3 => 'Paladin',
@@ -185,12 +178,12 @@ $config = array(
 
 	// new character config
 	'character_samples' => array( // vocations, format: ID_of_vocation => 'Name of Character to copy'
-		//0 => 'Rook Sample',
-		1 => 'Sorcerer Sample',
-		2 => 'Druid Sample',
-		3 => 'Paladin Sample',
-		4 => 'Knight Sample',
-		9 => 'Monk Sample',
+		0 => 'Rook Sample',
+		/* 5 => 'Sorcerer Sample',
+		6 => 'Druid Sample',
+		7 => 'Paladin Sample',
+		8 => 'Knight Sample',
+		10 => 'Monk Sample', */
 	),
 
 
@@ -249,7 +242,6 @@ $config = array(
 	'team_style' => 2, // 1/2 (1 - normal table, 2 - in boxes, grouped by group id)
 	'team_display_status' => true,
 	'team_display_lastlogin' => true,
-	'team_display_world' => false,
 	'team_display_outfit' => true,
 
 	// bans page
@@ -321,18 +313,17 @@ $config = array(
 	'whatsapp_link' => '5511912345678', // wa.me/5511912345678
 	'instagram_link' => 'profile', // www.instagram.com/profile
 	'facebook_link' => 'page', // www.facebook.com/page
-	'collapse_status' => true,
+	'collapse_status' => false,
+
+	// slide
+	'carousel' => array(
+		'runemaster_small.jpg',
+		'merrygarb_small.jpg',
+		'mothcape_small.jpg',
+	),
 
 	// events
 	'events_xml' => 'data/xml/events.xml',
-
-	// slide
-	'carousel_status' => true,
-	'carousel' => array(
-		'carousel_1' => 'runemaster_small.jpg',
-		'carousel_2' => 'merrygarb_small.jpg',
-		'carousel_3' => 'mothcape_small.jpg',
-	),
 
 	// load page
 	'pace_load' => true, // load page top bar

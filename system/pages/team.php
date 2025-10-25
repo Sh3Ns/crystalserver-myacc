@@ -56,7 +56,7 @@ foreach ($groupList as $id => $group) {
             'status' => $config['team_display_status'] ? $member->isOnline() : null,
             'link' => getPlayerLink($member->getName()),
             'flag_image' => $config['account_country'] ? getFlagImage($member->getAccount()->getCountry()) : null,
-            'world_name' => ($config['multiworld'] || $config['team_display_world']) ? getWorldName($member->getWorldId()) : null,
+            'world_name' => getWorldName($member->getWorldId()),
             'last_login' => $config['team_display_lastlogin'] ? $lastLogin : null
         );
     }
@@ -70,4 +70,3 @@ foreach ($groupList as $id => $group) {
 $twig->display('team.html.twig', array(
     'groupmember' => $groupMember
 ));
-?>

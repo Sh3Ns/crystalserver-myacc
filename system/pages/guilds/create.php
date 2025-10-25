@@ -1,4 +1,4 @@
-<?php
+<?php global $world, $config, $account_logged, $logged, $twig;
 /**
  * Create guild
  *
@@ -11,14 +11,14 @@ defined('MYAAC') or die('Direct access not allowed!');
 
 $guild_name = isset($_REQUEST['guild']) ? urldecode($_REQUEST['guild']) : NULL;
 $name = isset($_REQUEST['name']) ? stripslashes($_REQUEST['name']) : NULL;
-$todo = isset($_REQUEST['todo']) ? $_REQUEST['todo'] : NULL;
+$todo = $_REQUEST['todo'] ?? NULL;
 if (!$logged) {
     $guild_errors[] = 'You are not logged in. You can\'t create guild.';
 }
 
 $array_of_player_nig = array();
 if (empty($guild_errors)) {
-    $account_players = $account_logged->getPlayersList(false);
+    $account_players = $account_logged->getPlayersList(false, $world['id']);
     foreach ($account_players as $player) {
         $player_rank = $player->getRank();
         if (!$player_rank->isLoaded()) {
@@ -101,6 +101,7 @@ if (isset($todo) && $todo == 'save') {
     $new_guild->setCreationData(time());
     $new_guild->setName($guild_name);
     $new_guild->setOwner($player);
+    $new_guild->setWorldId($world['id'] ?? $_POST['world_id']);
     $new_guild->save();
     $new_guild->setCustomField('description', 'New guild. Leader must edit this text :)');
     //$new_guild->setCustomField('creationdata', time());
@@ -113,7 +114,8 @@ if (isset($todo) && $todo == 'save') {
     }
     $twig->display('guilds.create.success.html.twig', array(
         'guild_name' => $guild_name,
-        'leader_name' => $player->getName()
+        'leader_name' => $player->getName(),
+        'world' => $world,
     ));
 
     /*$db->exec('INSERT INTO `guild_ranks` (`id`, `guild_id`, `name`, `level`) VALUES (null, '.$new_guild->getId().', "the Leader", 3)');
@@ -122,6 +124,7 @@ if (isset($todo) && $todo == 'save') {
 } else {
     sort($array_of_player_nig);
     $twig->display('guilds.create.html.twig', array(
-        'players' => $array_of_player_nig
+        'players' => $array_of_player_nig,
+        'world' => $world,
     ));
 }

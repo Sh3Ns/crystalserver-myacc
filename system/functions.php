@@ -1002,14 +1002,44 @@ function get_plugins()
   return $ret;
 }
 
-function getWorldName($id)
+/**
+ * Returning world name by ID
+ *
+ * @param $id
+ * @return string
+ */
+function getWorldName($id): string
 {
-  global $config;
-  if (isset($config['worlds'][$id])) {
-    return $config['worlds'][$id];
+  global $db;
+  if ($db->hasTable('worlds')) {
+    if (
+      $world = $db->query("SELECT `name` FROM `worlds` WHERE `id` = {$id}")->fetch(PDO::FETCH_ASSOC)
+    ) {
+      return $world['name'];
+    }
+    return configLua('serverName');
   }
 
-  return $config['lua']['serverName'];
+  /**
+ * @param string $type
+ * @return string
+ */
+function getWorldType(string $type): string
+{
+  switch ($type) {
+    case 'pvp':
+      return 'Open PvP';
+    case 'no-pvp':
+      return 'Optional PvP';
+    case 'pvp-enforced':
+      return 'Hardcore PvP';
+    case 'retro-pvp':
+      return 'Retro Open PvP';
+    case 'retro-pvp-enforced':
+      return 'Retro Hardcore PvP';
+    default:
+      return $type;
+  }
 }
 
 /**
@@ -1062,7 +1092,7 @@ function _mail($to, $subject, $body, $altBody = '', $add_html_tags = true)
   $mailer->From = $config['mail_address'];
   $mailer->Sender = $config['mail_address'];
   $mailer->CharSet = 'utf-8';
-  $mailer->FromName = $config['lua']['serverName'];
+  $mailer->FromName = configLua('serverName');
   $mailer->Subject = $subject;
   $mailer->addAddress($to);
   $mailer->Body = $tmp_body;
@@ -1742,6 +1772,35 @@ function getPlayerNameByAccount($id, $name = null, $only = true, $orderBy = 'id'
     }
   }
   return '';
+}
+
+function generateQueryBuild(string $tableName, array $fields = [], $exec = true, $update = false)
+{
+  global $db;
+
+  $columns = implode(', ', array_keys($fields));
+  $values = implode(
+    ', ',
+    array_map(function ($value) use ($db) {
+      if (is_string($value)) {
+        return preg_match('/^\'[^\']*\'$/', $value) || preg_match('/^\"[^\"]*\"$/', $value)
+          ? $value
+          : $db->quote($value);
+      }
+      return $value;
+    }, array_values($fields))
+  );
+
+  // INSERT query on database
+  $sql = "INSERT INTO `$tableName` ($columns) VALUES ($values)";
+  try {
+    if (!$exec) {
+      return $sql;
+    }
+    $db->exec($sql);
+  } catch (Exception $e) {
+    log_append('query_build.log', "Error on query: ['$sql'] -> {$e->getMessage()}");
+  }
 }
 
 // validator functions

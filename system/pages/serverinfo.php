@@ -9,61 +9,65 @@
  * @copyright 2023 MyAAC
  */
 defined('MYAAC') or die('Direct access not allowed!');
-$title = 'Server Info';
+$title = 'Support in Game';
 
-$rent = trim(strtolower(configLua('houseRentPeriod')));
-if ($rent != 'yearly' && $rent != 'monthly' && $rent != 'weekly' && $rent != 'daily')
-    $rent = 'never';
+if ($config['account_country'])
+    require SYSTEM . 'countries.conf.php';
 
-$houseLevel = configLua('houseBuyLevel');
-$cleanOld = null;
-
-if ($pzLocked = configLua('pzLocked') ?? null)
-    $pzLocked = eval('return ' . $pzLocked . ';');
-
-if ($whiteSkullTime = configLua('whiteSkullTime') ?? null)
-    $whiteSkullTime = eval('return ' . $whiteSkullTime . ';');
-
-if ($redSkullDuration = configLua('redSkullDuration') ?? null)
-    $redSkullDuration = eval('return ' . $redSkullDuration . ';');
-
-if ($blackSkullDuration = configLua('blackSkullDuration') ?? null)
-    $blackSkullDuration = eval('return ' . $blackSkullDuration . ';');
-
-$explodeServerSave = explode(':', configLua('globalServerSaveTime') ?? '05:00:00');
-$hours_ServerSave = $explodeServerSave[0];
-$minutes_ServerSave = $explodeServerSave[1];
-$seconds_ServerSave = $explodeServerSave[2];
-
-$now = new DateTime();
-$serverSaveTime = new DateTime();
-$serverSaveTime->setTime($hours_ServerSave, $minutes_ServerSave, $seconds_ServerSave);
-
-if ($now > $serverSaveTime) {
-    $serverSaveTime->modify('+1 day');
+$groups = new OTS_Groups_List();
+if (!$groups->count()) {
+    echo 'Error while reading groups.xml';
+    return;
 }
 
-$twig->display('serverinfo.html.twig', [
-    'serverSave' => $explodeServerSave,
-    'serverSaveTime' => $serverSaveTime->format('Y, n-1, j, G, i, s'),
-    'rateUseStages' => $rateUseStages = getBoolean(configLua('rateUseStages')),
-    'rateStages' => $rateUseStages && isset($config['lua']['rateStages']) ? $config['lua']['rateStages'] : [],
-    'serverIp' => str_replace(['http://', 'https://', '/'], '', configLua('url')),
-    'clientVersion' => $status['clientVersion'] ?? null,
-    'protectionLevel' => configLua('protectionLevel'),
-    'houseRent' => $rent == 'never' ? 'disabled' : $rent,
-    'houseOld' => $cleanOld ?? null, // in progressing
-    'rateExp' => configLua('rateExp'),
-    'rateMagic' => configLua('rateMagic'),
-    'rateSkill' => configLua('rateSkill'),
-    'rateLoot' => configLua('rateLoot'),
-    'rateSpawn' => configLua('rateSpawn'),
-    'houseLevel' => $houseLevel,
-    'pzLocked' => $pzLocked,
-    'whiteSkullTime' => $whiteSkullTime,
-    'redSkullDuration' => $redSkullDuration,
-    'blackSkullDuration' => $blackSkullDuration,
-    'dailyFragsToRedSkull' => configLua('dayKillsToRedSkull') ?? null,
-    'weeklyFragsToRedSkull' => configLua('weekKillsToRedSkull') ?? null,
-    'monthlyFragsToRedSkull' => configLua('monthKillsToRedSkull') ?? null,
-]);
+$outfit_addons = false;
+$outfit = '';
+if ($config['team_display_outfit']) {
+    $outfit = ', lookbody, lookfeet, lookhead, looklegs, looktype';
+    if ($db->hasColumn('players', 'lookaddons')) {
+        $outfit .= ', lookaddons';
+        $outfit_addons = true;
+    }
+}
+
+$groupMember = array();
+$groupList = $groups->getGroups();
+foreach ($groupList as $id => $group) {
+    if ($id <= 1)
+        continue;
+
+    $group_members = $group->getPlayersList();
+    if (!count($group_members))
+        continue;
+
+    $members = array();
+    foreach ($group_members as $member) {
+        /** @var OTS_Player $member */
+        if (!admin() && $member->isHidden())
+            continue;
+
+        $lastLogin = 'Never.';
+        if ($member->getLastLogin() > 0)
+            $lastLogin = date("j F Y, g:i a", $member->getLastLogin());
+
+        $members[] = array(
+            'group_name' => $group->getName(),
+            'player' => $member,
+            'outfit' => $config['team_display_outfit'] ? $config['outfit_images_url'] . '?id=' . $member->getLookType() . ($outfit_addons ? '&addons=' . $member->getLookAddons() : '') . '&head=' . $member->getLookHead() . '&body=' . $member->getLookBody() . '&legs=' . $member->getLookLegs() . '&feet=' . $member->getLookFeet() : null,
+            'status' => $config['team_display_status'] ? $member->isOnline() : null,
+            'link' => getPlayerLink($member->getName()),
+            'flag_image' => $config['account_country'] ? getFlagImage($member->getAccount()->getCountry()) : null,
+            'world_name' => getWorldName($member->getWorldId()),
+            'last_login' => $config['team_display_lastlogin'] ? $lastLogin : null
+        );
+    }
+
+    $groupMember[] = array(
+        'group_name' => $group->getName(),
+        'members' => $members
+    );
+}
+
+$twig->display('team.html.twig', array(
+    'groupmember' => $groupMember
+));

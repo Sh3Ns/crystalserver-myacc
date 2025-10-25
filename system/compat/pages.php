@@ -17,7 +17,8 @@ switch ($page) {
         break;
 
     case 'whoisonline':
-        $page = 'online';
+    case 'online':
+        $page = 'worlds';
         break;
 
     case 'latestnews':

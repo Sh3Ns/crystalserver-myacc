@@ -1,6 +1,6 @@
 <?php
 if (!$auctions || !isset($auctions)) {
-    $auctions = []; 
+    $auctions = [];
 }
 
 foreach ($auctions as $auction) { /* LOOP AUCTIONS */
@@ -135,7 +135,7 @@ foreach ($auctions as $auction) { /* LOOP AUCTIONS */
                                     </div>
                                     Level: <?= $character['level'] ?> |
                                     Vocation: <?= $character_voc ?> | <?= $character_sex ?> |
-                                    World: <?= $config['lua']['serverName'] ?>
+                                    World: <?= getWorldName($character['world_id']) ?>
                                     <br>
                                 </div>
                                 <div class="AuctionBody">
@@ -253,7 +253,7 @@ foreach ($auctions as $auction) { /* LOOP AUCTIONS */
                                                         <div class="MyMaxBidLabel"></div>
                                                         <form
                                                             action="?subtopic=<?= $subtopic ?>&details=<?= $auction['id'] ?>"
-                                                            method="post"> 
+                                                            method="post">
                                                             <input type="hidden"
                                                                    name="auction_iden"
                                                                    value="<?= $auction['id'] ?>">
@@ -310,4 +310,3 @@ foreach ($auctions as $auction) { /* LOOP AUCTIONS */
     <?php
 } /* LOOP END */
 ?>
-
