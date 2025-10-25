@@ -333,12 +333,12 @@ function getForumBoards()
   global $db, $canEdit;
   $sections = $db->query(
     'SELECT `id`, `name`, `description`, `closed`, `guild`, `access`' .
-      ($canEdit ? ', `hidden`, `ordering`' : '') .
-      ' FROM `' .
-      TABLE_PREFIX .
-      'forum_boards` ' .
-      (!$canEdit ? ' WHERE `hidden` != 1' : '') .
-      ' ORDER BY `ordering`;'
+    ($canEdit ? ', `hidden`, `ordering`' : '') .
+    ' FROM `' .
+    TABLE_PREFIX .
+    'forum_boards` ' .
+    (!$canEdit ? ' WHERE `hidden` != 1' : '') .
+    ' ORDER BY `ordering`;'
   );
   if ($sections) {
     return $sections->fetchAll();
@@ -520,20 +520,20 @@ function delete_guild($id)
       if ($db->hasTable('guild_members')) {
         $players_with_rank = $db->query(
           'SELECT `players`.`id` as `id`, `guild_members`.`rank_id` as `rank_id` FROM `players`, `guild_members` WHERE `guild_members`.`rank_id` = ' .
-            $rank_in_guild->getId() .
-            ' AND `players`.`id` = `guild_members`.`player_id` ORDER BY `name`;'
+          $rank_in_guild->getId() .
+          ' AND `players`.`id` = `guild_members`.`player_id` ORDER BY `name`;'
         );
       } elseif ($db->hasTable('guild_membership')) {
         $players_with_rank = $db->query(
           'SELECT `players`.`id` as `id`, `guild_membership`.`rank_id` as `rank_id` FROM `players`, `guild_membership` WHERE `guild_membership`.`rank_id` = ' .
-            $rank_in_guild->getId() .
-            ' AND `players`.`id` = `guild_membership`.`player_id` ORDER BY `name`;'
+          $rank_in_guild->getId() .
+          ' AND `players`.`id` = `guild_membership`.`player_id` ORDER BY `name`;'
         );
       } else {
         $players_with_rank = $db->query(
           'SELECT `id`, `rank_id` FROM `players` WHERE `rank_id` = ' .
-            $rank_in_guild->getId() .
-            ' AND `deleted` = 0;'
+          $rank_in_guild->getId() .
+          ' AND `deleted` = 0;'
         );
       }
 
@@ -1017,10 +1017,11 @@ function getWorldName($id): string
     ) {
       return $world['name'];
     }
-    return configLua('serverName');
   }
+  return configLua('serverName');
+}
 
-  /**
+/**
  * @param string $type
  * @return string
  */
@@ -1200,19 +1201,19 @@ function load_config_lua($filename)
             foreach (
               $result
               as $tmp_key =>
-                $tmp_value // load values definied by other keys, like: dailyFragsToBlackSkull = dailyFragsToRedSkull
+              $tmp_value // load values definied by other keys, like: dailyFragsToBlackSkull = dailyFragsToRedSkull
             ) {
               $value = str_replace($tmp_key, $tmp_value, $value);
             }
-            $ret = @eval("return $value;");
+            $ret = @eval ("return $value;");
             if ((string) $ret == '' && trim($value) !== '""') {
               // = parser error
               throw new RuntimeException(
                 'ERROR: Loading config.lua file. Line <b>' .
-                  ($ln + 1) .
-                  '</b> of LUA config file is not valid [key: <b>' .
-                  $key .
-                  '</b>]'
+                ($ln + 1) .
+                '</b> of LUA config file is not valid [key: <b>' .
+                $key .
+                '</b>]'
               );
             }
             $result[$key] = $ret;
@@ -1291,17 +1292,17 @@ function getTopPlayers($limit = 5)
     $players = $db
       ->query(
         'SELECT `id`, `name`, `level`, `vocation`, `experience`, `looktype`' .
-          ($db->hasColumn('players', 'lookaddons') ? ', `lookaddons`' : '') .
-          ', `lookhead`, `lookbody`, `looklegs`, `lookfeet`' .
-          ($is_tfs10 ? '' : ', `online`') .
-          ' FROM `players` WHERE `group_id` < ' .
-          config('highscores_groups_hidden') .
-          ' AND `id` NOT IN (' .
-          implode(', ', config('highscores_ids_hidden')) .
-          ') AND `' .
-          $deleted .
-          '` = 0 AND `account_id` != 1 ORDER BY `experience` DESC LIMIT ' .
-          (int) $limit
+        ($db->hasColumn('players', 'lookaddons') ? ', `lookaddons`' : '') .
+        ', `lookhead`, `lookbody`, `looklegs`, `lookfeet`' .
+        ($is_tfs10 ? '' : ', `online`') .
+        ' FROM `players` WHERE `group_id` < ' .
+        config('highscores_groups_hidden') .
+        ' AND `id` NOT IN (' .
+        implode(', ', config('highscores_ids_hidden')) .
+        ') AND `' .
+        $deleted .
+        '` = 0 AND `account_id` != 1 ORDER BY `experience` DESC LIMIT ' .
+        (int) $limit
       )
       ->fetchAll();
 
@@ -1461,13 +1462,13 @@ function getCustomPageInfo($page)
   global $db, $logged_access;
   $query = $db->query(
     'SELECT `id`, `title`, `body`, `php`, `hidden`' .
-      ' FROM `' .
-      TABLE_PREFIX .
-      'pages`' .
-      ' WHERE `name` LIKE ' .
-      $db->quote($page) .
-      ' AND `hidden` != 1 AND `access` <= ' .
-      $db->quote($logged_access)
+    ' FROM `' .
+    TABLE_PREFIX .
+    'pages`' .
+    ' WHERE `name` LIKE ' .
+    $db->quote($page) .
+    ' AND `hidden` != 1 AND `access` <= ' .
+    $db->quote($logged_access)
   );
   if ($query->rowCount() > 0) {
     // found page
@@ -1485,13 +1486,13 @@ function getCustomPage($page, &$success)
   $content = '';
   $query = $db->query(
     'SELECT `id`, `title`, `body`, `php`, `hidden`' .
-      ' FROM `' .
-      TABLE_PREFIX .
-      'pages`' .
-      ' WHERE `name` LIKE ' .
-      $db->quote($page) .
-      ' AND `hidden` != 1 AND `access` <= ' .
-      $db->quote($logged_access)
+    ' FROM `' .
+    TABLE_PREFIX .
+    'pages`' .
+    ' WHERE `name` LIKE ' .
+    $db->quote($page) .
+    ' AND `hidden` != 1 AND `access` <= ' .
+    $db->quote($logged_access)
   );
   if ($query->rowCount() > 0) {
     // found page
@@ -1525,7 +1526,7 @@ function getCustomPage($page, &$success)
       }
 
       ob_start();
-      eval($tmp);
+      eval ($tmp);
       $content .= ob_get_contents();
       ob_end_clean();
 
@@ -1590,11 +1591,11 @@ function getDatabasePages($withHidden = false): array
 
   $pages = $db->query(
     'SELECT `name` FROM ' .
-      TABLE_PREFIX .
-      'pages WHERE ' .
-      ($withHidden ? '' : '`hidden` != 1 AND ') .
-      '`access` <= ' .
-      $db->quote($logged_access)
+    TABLE_PREFIX .
+    'pages WHERE ' .
+    ($withHidden ? '' : '`hidden` != 1 AND ') .
+    '`access` <= ' .
+    $db->quote($logged_access)
   );
   if ($pages->rowCount() < 1) {
     return [];
@@ -1660,8 +1661,8 @@ function loadStagesData($configFile)
         ];
         $minlevel =
           isset($checks['min'][0]) && trim($checks['min'][0]) == 'minlevel'
-            ? $checks['min'][1]
-            : null;
+          ? $checks['min'][1]
+          : null;
         $maxlevel = !isset($checks['mul'][1])
           ? null
           : (trim($checks['max'][0]) == 'maxlevel'
@@ -1669,10 +1670,10 @@ function loadStagesData($configFile)
             : null);
         $multiplier =
           isset($checks['mul'][0]) && trim($checks['mul'][0]) == 'multiplier'
-            ? $checks['mul'][1]
-            : (trim($checks['max'][0]) == 'multiplier'
-              ? $checks['max'][1]
-              : null);
+          ? $checks['mul'][1]
+          : (trim($checks['max'][0]) == 'multiplier'
+            ? $checks['max'][1]
+            : null);
 
         if (!$minlevel && !$maxlevel && !$multiplier) {
           continue;
@@ -1737,9 +1738,9 @@ function getPlayerNameByAccount($id, $name = null, $only = true, $orderBy = 'id'
   } elseif (is_string($name)) {
     if (
       $id =
-        $db
-          ->query("SELECT `id` FROM `accounts` WHERE `name` = {$db->quote($name)} LIMIT 1;")
-          ->fetch()['id'] ?? null
+      $db
+        ->query("SELECT `id` FROM `accounts` WHERE `name` = {$db->quote($name)} LIMIT 1;")
+        ->fetch()['id'] ?? null
     ) {
       if ($only) {
         $playerQuery = $db
