@@ -30,6 +30,77 @@ if (count($errors) > 0) {
 }
 
 if (!$character_created) {
+	// Buscar mundos da configuração
+	$worlds = array();
+
+	// Verificar se o sistema multiworld está ativo
+	if (isset($config['multiworld']) && $config['multiworld'] === true && isset($config['worlds'])) {
+		// Usar a lista de mundos do config.php
+		foreach ($config['worlds'] as $id => $name) {
+			$worlds[] = array(
+				'id' => $id,
+				'name' => $name
+			);
+		}
+	} else {
+		// Se não houver multiworld, tentar pegar do banco de dados
+		$possible_tables = array(
+			TABLE_PREFIX . 'servers',
+			'servers',
+			TABLE_PREFIX . 'worlds',
+			'worlds',
+		);
+
+		foreach ($possible_tables as $table) {
+			try {
+				$query = $db->query('SELECT `id`, `name` FROM `' . $table . '` ORDER BY `name` ASC');
+				if ($query) {
+					while ($world = $query->fetch(PDO::FETCH_ASSOC)) {
+						$worlds[] = $world;
+					}
+					if (!empty($worlds)) {
+						break;
+					}
+				}
+			} catch (Exception $e) {
+				continue;
+			}
+		}
+
+		// Se ainda não houver mundos, usar o nome do servidor do config.lua
+		if (empty($worlds)) {
+			$worlds[] = array(
+				'id' => 0,
+				'name' => isset($config['lua']['serverName']) ? $config['lua']['serverName'] : 'Main Server'
+			);
+		}
+	}
+
+	$twig->display('account.create_character.html.twig', array(
+		'name' => $character_name,
+		'sex' => $character_sex,
+		'world' => $character_world,
+		'vocation' => $character_vocation,
+		'town' => $character_town,
+		'save' => $save,
+		'errors' => $errors,
+		'worlds' => $worlds,
+		'locations' => [
+			['name' => 'Europe', 'value' => 'EUR'],
+			['name' => 'North America', 'value' => 'NA'],
+			['name' => 'South America', 'value' => 'SA'],
+			['name' => 'Oceania', 'value' => 'OCE'],
+		],
+		'world_types' => [
+			['name' => 'Optional PvP', 'value' => 'optional', 'desc' => 'Only if both sides agree, characters can be fought'],
+			['name' => 'Open PvP', 'value' => 'open', 'desc' => 'Killing other characters is possible, but restricted'],
+			['name' => 'Retro Open PvP', 'value' => 'retro', 'desc' => 'Killing other characters is possible, but restricted (old PvP rules)'],
+			['name' => 'Retro Hardcore PvP', 'value' => 'retrohardcore', 'desc' => 'Killing other characters is not restricted at all (old PvP rules)'],
+		],
+	));
+}
+
+if (!$character_created) {
 	$twig->display('account.create_character.html.twig', array(
 		'name' => $character_name,
 		'sex' => $character_sex,

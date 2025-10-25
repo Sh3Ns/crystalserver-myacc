@@ -1,4 +1,5 @@
 <?php
+
 /**
  * CreateCharacter
  *
@@ -126,7 +127,20 @@ class CreateCharacter
             return false;
         }
 
-        if (!$worldId = $db->query("SELECT `id` FROM `worlds` WHERE `name` = {$db->quote($worldName)}")->fetch(PDO::FETCH_ASSOC)['id'] ?? null) {
+        // Get world ID with proper error handling
+        $worldQuery = $db->query("SELECT `id` FROM `worlds` WHERE `name` = {$db->quote($worldName)}");
+        $worldResult = $worldQuery->fetch(PDO::FETCH_ASSOC);
+
+        if (!$worldResult || !isset($worldResult['id'])) {
+            $errors[] = 'Invalid world selected. Please try again.';
+            return false;
+        }
+
+        $world_id = (int)$worldResult['id'];
+
+        // Verify world_id is valid (greater than 0)
+        if ($world_id <= 0) {
+            $errors[] = 'Invalid world ID. Please contact administrator.';
             return false;
         }
 
@@ -151,22 +165,31 @@ class CreateCharacter
         if ($vocation == "9") { // Monk vocation
             if ($sex == "0") {
                 $char_to_copy->setLookType(1825); // female
-            }
-            else{
+            } else {
                 $char_to_copy->setLookType(1824); // male
             }
-        }
-        else {
+        } else {
             if ($sex == "0")
                 $char_to_copy->setLookType(136);
         }
 
+        // Create new player
         $player = new OTS_Player();
+
+        // CRITICAL: Set world_id as the VERY FIRST property
+        // This must be done before any other setters
+        if (method_exists($player, 'setworld_id')) {
+            $player->setworld_id($world_id);
+        } else if (method_exists($player, 'setWorldId')) {
+            $player->setWorldId($world_id);
+        }
+
         $player->setName($name);
         $player->setAccount($account);
         $player->setGroupId(1);
         $player->setSex($sex);
         $player->setVocation($char_to_copy->getVocation());
+
         if ($db->hasColumn('players', 'promotion'))
             $player->setPromotion($char_to_copy->getPromotion());
 
@@ -194,8 +217,10 @@ class CreateCharacter
         $player->setSoul($char_to_copy->getSoul());
 
         for ($skill = POT::SKILL_FIRST; $skill <= POT::SKILL_LAST; $skill++) {
-            $player->setSkill($skill,
-                config('use_character_sample_skills') ? $char_to_copy->getSkill($skill) : 10);
+            $player->setSkill(
+                $skill,
+                config('use_character_sample_skills') ? $char_to_copy->getSkill($skill) : 10
+            );
         }
 
         $player->setLookBody($char_to_copy->getLookBody());
@@ -226,9 +251,31 @@ class CreateCharacter
             $player->setMain($number_of_players_on_account == 0);
         }
 
-        $player->setWorldId($worldId);
-        $player->save();
-        $player->setCustomField('created', time());
+        // Double-check: Ensure world_id is set before save
+        try {
+            // Try direct SQL insert as fallback
+            $player->save();
+
+            // Verify and update world_id if needed
+            $saved_player = new OTS_Player();
+            $saved_player->find($name);
+
+            if ($saved_player->isLoaded()) {
+                // Check if world_id was saved correctly
+                $check_world = $db->query("SELECT `world_id` FROM `players` WHERE `id` = " . $saved_player->getId())->fetch();
+                if (!$check_world || $check_world['world_id'] != $world_id) {
+                    // Force update world_id
+                    $db->query("UPDATE `players` SET `world_id` = {$world_id} WHERE `id` = " . $saved_player->getId());
+                }
+
+                $player->setCustomField('created', time());
+            }
+        } catch (PDOException $e) {
+            // If save fails, try direct INSERT
+            error_log("OTS_Player save failed: " . $e->getMessage());
+            $errors[] = "Database error while creating character. Error: " . $e->getMessage();
+            return false;
+        }
 
         $player = new OTS_Player();
         $player->find($name);
