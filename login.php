@@ -35,31 +35,31 @@ function parseEvent($table1, $date, $table2)
 // compendium function
 function jsonCompendium()
 {
-    $filePath = config('server_path') . 'compendium.json';
-    if (file_exists($filePath)) {
-        $fileContents = file_get_contents($filePath);
-        $jsonData = json_decode($fileContents, true);
+  $filePath = config('server_path') . 'compendium.json';
+  if (file_exists($filePath)) {
+    $fileContents = file_get_contents($filePath);
+    $jsonData = json_decode($fileContents, true);
 
-        if ($jsonData !== null) {
-            $categoryCounts = $jsonData['categorycounts'];
-            $gamenews = $jsonData['gamenews'];
+    if ($jsonData !== null) {
+      $categoryCounts = $jsonData['categorycounts'];
+      $gamenews = $jsonData['gamenews'];
 
-            $response = [
-                'categorycounts' => $categoryCounts,
-                'gamenews' => $gamenews,
-                'idOfNewestReadEntry' => 0,
-                'isreturner' => false,
-                'lastupdatetimestamp' => 0,
-                'maxeditdate' => 0,
-                'showrewardnews' => true,
-            ];
-            return $response;
-        } else {
-            return ['error' => 'Failed to decode JSON'];
-        }
+      $response = [
+        'categorycounts' => $categoryCounts,
+        'gamenews' => $gamenews,
+        'idOfNewestReadEntry' => 0,
+        'isreturner' => false,
+        'lastupdatetimestamp' => 0,
+        'maxeditdate' => 0,
+        'showrewardnews' => true,
+      ];
+      return $response;
     } else {
-        return ['error' => 'File not found'];
+      return ['error' => 'Failed to decode JSON'];
     }
+  } else {
+    return ['error' => 'File not found'];
+  }
 }
 
 $request = file_get_contents('php://input');
@@ -114,36 +114,31 @@ switch ($action) {
     $bossBoost     = $db->query("SELECT * FROM " . $db->tableName('boosted_boss'))->fetchAll();
     die(json_encode([
       'boostedcreature' => true,
-      'creatureraceid' => intval($creatureBoost[0]['raceid'] ?? 0),
-      'bossraceid' => intval($bossBoost[0]['raceid'] ?? 0)
+      'creatureraceid'  => intval($creatureBoost[0]['raceid'] ?? 0),
+      'bossraceid'      => intval($bossBoost[0]['raceid'] ?? 0)
     ]));
 
-  case 'login':
-    $ip   = configLua('ip');
-    $port = configLua('gameProtocolPort');
-
-    // default world info
   case 'login':
     $queryW = $db->query("SELECT * FROM worlds");
     $worlds = [];
     if ($queryW && $queryW->rowCount() > 0) {
       foreach ($queryW->fetchAll() as $world) {
         $worlds[] = [
-          'id' => $world['id'],
-          'name' => $world['name'],
-          'externaladdress' => $world['ip'],
-          'externaladdressprotected' => $world['ip'],
+          'id'                         => $world['id'],
+          'name'                       => $world['name'],
+          'externaladdress'            => $world['ip'],
+          'externaladdressprotected'   => $world['ip'],
           'externaladdressunprotected' => $world['ip'],
-          'externalport' => $world['port'],
-          'externalportprotected' => $world['port'],
-          'externalportunprotected' => $world['port'],
-          'previewstate' => 0, // 0 => regular or 1 => experimental
-          'location' => $world['location'],
-          'anticheatprotection' => false,
-          'pvptype' => array_search($world['type'], ['pvp', 'no-pvp', 'pvp-enforced', 'retro-pvp', 'retro-pvp-enforced']),
-          'istournamentworld' => false,
-          'restrictedstore' => false,
-          'currenttournamentphase' => 0
+          'externalport'               => $world['port'],
+          'externalportprotected'      => $world['port'],
+          'externalportunprotected'    => $world['port'],
+          'previewstate'               => 0, // 0 => regular or 1 => experimental
+          'location'                   => $world['location'],
+          'anticheatprotection'        => false,
+          'pvptype'                    => array_search($world['type'], ['pvp', 'no-pvp', 'pvp-enforced', 'retro-pvp', 'retro-pvp-enforced']),
+          'istournamentworld'          => false,
+          'restrictedstore'            => false,
+          'currenttournamentphase'     => 0
         ];
       }
     }
@@ -162,9 +157,10 @@ switch ($action) {
     }
 
     // common columns
-    $accId = $account->getId();
-    $columns = 'name, level, sex, vocation, looktype, lookhead, lookbody, looklegs, lookfeet, lookaddons, lastlogin, isreward, istutorial, ismain, hidden, world_id';
-    $queryP = $db->query("SELECT {$columns} FROM players WHERE account_id = {$accId} AND deletion = 0");
+    $accId      = $account->getId();
+
+    $columns    = 'name, level, sex, vocation, looktype, lookhead, lookbody, looklegs, lookfeet, lookaddons, lastlogin, isreward, istutorial, ismain, hidden, world_id';
+    $queryP     = $db->query("SELECT {$columns} FROM players WHERE account_id = {$accId} AND deletion = 0");
     $characters = [];
     if ($queryP && $queryP->rowCount() > 0) {
       foreach ($queryP->fetchAll() as $player) {
@@ -180,7 +176,6 @@ switch ($action) {
       sendError("Error while fetching your account data. Please contact admin.");
     }
 
-     'worldid'                          => $player['world_id'],
     $playdata = compact('worlds', 'characters');
     $session  = [
       'sessionkey'                    => "$result->email\n$result->password",
@@ -234,7 +229,7 @@ function createChar($config, $player)
 
 /**
  * Function to check account has premium time and update days
- @param array $query
+ * @param array $query
  * @param int $accId
  * @return float|int
  */
