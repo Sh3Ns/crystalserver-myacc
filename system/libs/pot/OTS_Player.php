@@ -386,10 +386,13 @@ class OTS_Player extends OTS_Row_DAO
         if (!isset($this->data['ismain']))
             $this->data['ismain'] = 0;
 
-        // FORCE world_id default value if not set
-        if (!isset($this->data['world_id']) || $this->data['world_id'] === null || $this->data['world_id'] === 0) {
+        if (!isset($this->data['world_id'])) {
+            // Se world_id não está definido, tenta obter o primeiro world disponível
             global $db;
-            $this->data['world_id'] = 1; // Default to world ID 1
+            if ($db->hasColumn('players', 'world_id')) {
+                $default_world = $db->query('SELECT `id` FROM `worlds` ORDER BY `id` LIMIT 1')->fetch();
+                $this->data['world_id'] = $default_world ? (int)$default_world['id'] : 0;
+            }
         }
 
         // updates existing player

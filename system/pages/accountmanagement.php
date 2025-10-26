@@ -103,9 +103,9 @@ if ($action == '') {
 
     $verify_message = "";
     if ($config['mail_enabled'] && $config['account_mail_verify'] && $account_logged->getCustomField('email_verified') != '1') {
-      $verifyLink = getLink('account/resend/verify');
-      $type = ($config['account_verified_only'] ?? false) ? 'required' : 'optional';
-      $verify_message = "<span style='color: red'>Verification is {$type}! Please <b><a href='{$verifyLink}'>Verify</a></b> your Account!</span>";
+        $verifyLink = getLink('account/resend/verify');
+        $type = ($config['account_verified_only'] ?? false) ? 'required' : 'optional';
+        $verify_message = "<span style='color: red'>Verification is {$type}! Please <b><a href='{$verifyLink}'>Verify</a></b> your Account!</span>";
     }
 
     $email_change = '';
