@@ -46,6 +46,13 @@ class CreateCharacter
             $errors['name'] = 'Your name contains illegal characters.';
             return false;
         }
+        // Check if character name already exists in database
+        global $db;
+        $existingPlayer = $db->query("SELECT `id` FROM `players` WHERE `name` = " . $db->quote($name));
+        if ($existingPlayer->rowCount() > 0) {
+            $errors['name'] = 'This character name already used! Please choose another name.';
+            return false;
+        }
 
         if (!admin() && !Validator::newCharacterName($name)) {
             $errors['name'] = Validator::getLastError();

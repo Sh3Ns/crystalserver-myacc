@@ -49,8 +49,8 @@ In any case the name must not violate the naming conventions stated in the <a hr
                     <table class="TableContent" width="100%" style="border:1px solid #faf0d7;">
                       <tbody>
                       <tr class="LabelH">
-                        <td style="width:50%;"><span>Name</span></td>
-                        <td><span>Sex</span></td>
+                        <td style="width:50%;"><span>Name<span style="color: red;">*</span></span></td>
+                        <td><span>Sex</span style="color: red;">*</span></span></td>
                       </tr>
                       <tr class="Even">
                         <td><input name="name" id="character_name" value="{{ name }}"
@@ -313,7 +313,7 @@ In any case the name must not violate the naming conventions stated in the <a hr
                       <table class="TableContent" width="100%" style="border:1px solid #faf0d7;">
                         <tbody>
                         <tr class="LabelH">
-                          <td colspan="2">Select your vocation</td>
+                          <td colspan="2">Select your vocation <span style="color: red;">*</span></td>
                         </tr>
                         <tr class="Even">
                           {% for key, sample_char in config.character_samples %}
@@ -338,7 +338,7 @@ In any case the name must not violate the naming conventions stated in the <a hr
                       <table class="TableContent" width="100%" style="border:1px solid #faf0d7;">
                         <tbody>
                         <tr class="LabelH">
-                          <td colspan="2">Select your town</td>
+                          <td colspan="2">Select your town <span style="color: red;">*</span></td>
                         </tr>
                         <tr class="Odd">
                           {% for town_id in config.character_towns %}
@@ -393,3 +393,87 @@ In any case the name must not violate the naming conventions stated in the <a hr
 </tr>
 </table>
 <script type="text/javascript" src="tools/check_name.js"></script>
+
+<script type="text/javascript">
+$(function () {
+  $('#character_name').keyup(function () {
+    performValidation();
+  });
+
+  $('#character_name').blur(function () {
+    checkName();
+  });
+});
+
+var eventId = 0;
+var lastSend = 0;
+
+function performValidation() {
+  var name = document.getElementById('character_name').value;
+  var $characterError = $('#character_error');
+  var $characterIndicator = $('#character_indicator');
+
+  if (name == '') {
+    $characterError.html(
+      '<span style="color: red">Please enter new character name.</span>',
+    );
+    $characterIndicator.attr('src', 'images/global/general/nok.gif');
+    $characterIndicator.show();
+    return;
+  }
+
+  $.getJSON(
+    'tools/validate.php',
+    { name: name, uid: Math.random() },
+    function (data) {
+      if (data.hasOwnProperty('success')) {
+        $characterError.html(
+          '<span style="color: green">' + data.success + '</span>',
+        );
+        $characterIndicator.attr('src', 'images/global/general/ok.gif');
+      } else if (data.hasOwnProperty('error')) {
+        $characterError.html(
+          '<span style="color: red">' + data.error + '</span>',
+        );
+        $characterIndicator.attr('src', 'images/global/general/nok.gif');
+      }
+
+      $characterIndicator.show();
+      lastSend = parseInt(new Date().getTime());
+    },
+  );
+}
+
+function checkName() {
+  if (eventId != 0) {
+    clearInterval(eventId);
+    eventId = 0;
+  }
+
+  var timeNow = parseInt(new Date().getTime());
+  if (lastSend != 0 && timeNow - lastSend < 1100) {
+    eventId = setInterval('checkName()', 1100);
+    return;
+  }
+
+  performValidation();
+}
+
+function generateNewName() {
+  var prefixes = ['Ad', 'Al', 'Ar', 'Az', 'Be', 'Br', 'Ca', 'Ce', 'Ch', 'Cl', 'Co', 'Cr', 'Cu', 'Da', 'De', 'Di', 'Do', 'Dr', 'Du', 'El', 'Em', 'En', 'Er', 'Es', 'Et', 'Ex', 'Fa', 'Fe', 'Fi', 'Fl', 'Fo', 'Fr', 'Fu', 'Ga', 'Ge', 'Gi', 'Gl', 'Go', 'Gr', 'Gu', 'Ha', 'He', 'Hi', 'Ho', 'Hu', 'Hy', 'Ia', 'Id', 'If', 'Ig', 'Il', 'Im', 'In', 'Io', 'Ir', 'Is', 'It', 'Ja', 'Je', 'Ji', 'Jo', 'Ju', 'Ka', 'Ke', 'Ki', 'Ko', 'Ku', 'La', 'Le', 'Li', 'Lo', 'Lu', 'Ma', 'Me', 'Mi', 'Mo', 'Mu', 'Na', 'Ne', 'Ni', 'No', 'Nu', 'Oa', 'Oc', 'Od', 'Of', 'Og', 'Oh', 'Oi', 'Ok', 'Ol', 'Om', 'On', 'Oo', 'Op', 'Or', 'Os', 'Ot', 'Ou', 'Ov', 'Ow', 'Ox', 'Oy', 'Oz', 'Pa', 'Pe', 'Ph', 'Pi', 'Pl', 'Po', 'Pr', 'Pu', 'Qu', 'Ra', 'Re', 'Ri', 'Ro', 'Ru', 'Sa', 'Se', 'Sh', 'Si', 'Sk', 'Sl', 'Sm', 'Sn', 'So', 'Sp', 'St', 'Su', 'Sw', 'Ta', 'Te', 'Th', 'Ti', 'To', 'Tr', 'Tu', 'Tw', 'Ty', 'Un', 'Up', 'Ur', 'Us', 'Va', 'Ve', 'Vi', 'Vo', 'Wa', 'We', 'Wh', 'Wi', 'Wo', 'Wr', 'Xa', 'Xe', 'Xi', 'Xo', 'Xu', 'Ya', 'Ye', 'Yi', 'Yo', 'Yu', 'Za', 'Ze', 'Zi', 'Zo', 'Zu'];
+  var middles = ['a', 'ae', 'ai', 'an', 'ar', 'as', 'at', 'au', 'e', 'ea', 'ed', 'ee', 'ef', 'eg', 'eh', 'ei', 'ek', 'el', 'em', 'en', 'er', 'es', 'et', 'eu', 'ev', 'ew', 'ex', 'ey', 'ez', 'i', 'ia', 'id', 'if', 'ig', 'ih', 'ik', 'il', 'im', 'in', 'ir', 'is', 'it', 'iu', 'ix', 'iy', 'o', 'oa', 'ob', 'od', 'of', 'og', 'oh', 'oi', 'ok', 'ol', 'om', 'on', 'op', 'or', 'os', 'ot', 'ou', 'ov', 'ox', 'oy', 'oz', 'u', 'ua', 'ub', 'ud', 'ue', 'ug', 'uh', 'ui', 'uk', 'ul', 'um', 'un', 'up', 'ur', 'us', 'ut', 'uu', 'uy', 'uz'];
+  var suffixes = ['ad', 'af', 'ag', 'ah', 'ak', 'al', 'am', 'an', 'ap', 'ar', 'as', 'at', 'ax', 'ay', 'az', 'ed', 'ef', 'eg', 'eh', 'ek', 'el', 'em', 'en', 'ep', 'er', 'es', 'et', 'ex', 'ey', 'ez', 'id', 'if', 'ig', 'ih', 'ik', 'il', 'im', 'in', 'ip', 'ir', 'is', 'it', 'ix', 'iz', 'od', 'of', 'og', 'oh', 'ok', 'ol', 'om', 'on', 'op', 'or', 'os', 'ot', 'ox', 'oy', 'oz', 'ud', 'uf', 'ug', 'uh', 'uk', 'ul', 'um', 'un', 'up', 'ur', 'us', 'ut', 'ux', 'uy', 'uz'];
+
+  var p = prefixes[Math.floor(Math.random() * prefixes.length)];
+  var m = middles[Math.floor(Math.random() * middles.length)];
+  var s = suffixes[Math.floor(Math.random() * suffixes.length)];
+
+  document.getElementById('character_name').value = p + m + s;
+
+  setTimeout(function () {
+    performValidation();
+  }, 100);
+
+  return false;
+}
+</script>
