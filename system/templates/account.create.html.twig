@@ -29,11 +29,11 @@
 												<tbody>
 
 												{{ hook('HOOK_ACCOUNT_CREATE_BEFORE_ACCOUNT') }}
-												
+
 												{% if config.account_login_by_email %}
 												<tr>
 													<td class="LabelV" style="width: 150px">
-														<span{% if errors.account is defined %} class="red"{% endif %}>Account {% if constant('USE_ACCOUNT_NAME') %}Name{% else %}Number{% endif %}:</span>
+														<span{% if errors.account is defined %} class="red"{% endif %}>Account {% if constant('USE_ACCOUNT_NAME') %}Name{% else %}Number{% endif %}: <span style="color: red;">*</span></span>
 													</td>
 													<td>
 														<input type="text" name="account" id="account_input" size="30" maxlength="{% if constant('USE_ACCOUNT_NAME') %}30{% else %}10{% endif %}" />
@@ -48,7 +48,7 @@
 												{{ hook('HOOK_ACCOUNT_CREATE_AFTER_ACCOUNT') }}
 												<tr>
 													<td class="LabelV" style="width: 150px">
-														<span{% if errors.email is defined %} class="red"{% endif %}>Email Address:</span>
+														<span{% if errors.email is defined %} class="red"{% endif %}>Email Address: <span style="color: red;">*</span></span>
 													</td>
 													<td>
 														<input type="text" name="email" id="email" size="30" maxlength="50" value="{{ email }}" />
@@ -68,7 +68,7 @@
                                                 {% if config.account_country %}
 													<tr>
 														<td class="LabelV" style="width: 150px">
-															<span{% if errors.country[0] is defined %} class="red"{% endif %}>Country:</span>
+															<span{% if errors.country[0] is defined %} class="red"{% endif %}>Country: <span style="color: red;">*</span></span>
 														</td>
 														<td>
 															<select name="country" id="account_country">
@@ -88,7 +88,7 @@
 
 												<tr>
 													<td class="LabelV" style="width: 150px">
-														<span{% if errors.password is defined %} class="red"{% endif %}>Password:</span>
+														<span{% if errors.password is defined %} class="red"{% endif %}>Password: <span style="color: red;">*</span></span>
 													</td>
 													<td>
 														<input type="password" name="password" id="password" value="" size="30" maxlength="29" />
@@ -98,7 +98,7 @@
 												<tr><td></td><td><span id="password_error" class="FormFieldError">{% if errors.password is defined %}{{ errors.password }}{% endif %}</span></td></tr>
 												<tr>
 													<td class="LabelV" style="width: 150px">
-														<span{% if errors.password is defined %} class="red"{% endif %}>Repeat password:</span>
+														<span{% if errors.password is defined %} class="red"{% endif %}>Repeat password: <span style="color: red;">*</span></span>
 													</td>
 													<td>
 														<input type="password" name="password2" id="password2" value="" size="30" maxlength="29" />
@@ -150,11 +150,12 @@
 
 												<tr>
 													<td class="LabelV" style="width: 150px">
-														<span{% if errors.name is defined %} class="red"{% endif %}>Character Name:</span>
+														<span{% if errors.name is defined %} class="red"{% endif %}>Character Name: <span style="color: red;">*</span></span>
 													</td>
 													<td>
-														<input id="character_name" name="name" size="{{ config.character_name_max_length }}" maxlength="{{ config.character_name_max_length }}" value="{{ name }}"/>
+														<input id="character_name" name="name" size="{{ config.character_name_max_length }}" maxlength="{{ config.character_name_max_length }}" value="{{ name }}" onkeyup="checkName();"/>
 														<img id="character_indicator" src="images/global/general/{% if not save or errors.name is defined %}n{% endif %}ok.gif" style="display: none;" />														<br>
+														<div id="SuggestCharacterName">[<a href="#">suggest name</a>]</div>
 													</td>
 												</tr>
 												<tr>
@@ -290,7 +291,7 @@
 												</tr>
 												<tr>
 													<td colspan="2" >
-														<span><input type="checkbox" id="accept_rules" name="accept_rules" value="true"{% if accept_rules %}checked{% endif %}/> <label for="accept_rules">I agree to the <a href="?subtopic=rules" target="_blank">{{ config.lua.serverName }} Rules</a>.</label></span>
+														<span><input type="checkbox" id="accept_rules" name="accept_rules" value="true"{% if accept_rules %}checked{% endif %}/> <label for="accept_rules">I agree to the <a href="?subtopic=rules" target="_blank">{{ config.lua.serverName }} Rules</a>. <span style="color: red;">*</span></label></span>
 													</td>
 												</tr>
                                                 {% if errors.accept_rules is defined %}
