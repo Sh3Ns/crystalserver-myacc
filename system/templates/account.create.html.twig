@@ -169,7 +169,7 @@
 
 												<tr>
 													<td class="LabelV" style="width: 150px">
-														<span{% if errors.sex is defined %} class="red"{% endif %}>Sex:</span>
+														<span{% if errors.sex is defined %} class="red"{% endif %}>Sex: <span style="color: red;">*</span></span>
 													</td>
 													<td>
 														<table width="100%">
@@ -204,7 +204,7 @@
                                                 {% if config.character_samples|length > 1 %}
 												<tr>
 													<td class="LabelV" style="width: 150px">
-														<span{% if errors.vocation is defined %} class="red"{% endif %}>Vocation:</span>
+														<span{% if errors.vocation is defined %} class="red"{% endif %}>Vocation: <span style="color: red;">*</span></span>
 													</td>
 													<td>
 														<table width="100%" >
